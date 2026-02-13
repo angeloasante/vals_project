@@ -219,9 +219,16 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="relative z-10 border-t border-white/20 py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-white/60 text-sm">
-            Made with 💕 for lovers everywhere
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 text-white/60 text-sm">
+            <span>© 2026 vals.love</span>
+            <span className="hidden sm:inline">•</span>
+            <span>
+              Made with 💕 by{" "}
+              <a href="https://travismoore.com" target="_blank" rel="noopener noreferrer" className="hover:text-white underline">
+                Travis Moore
+              </a>
+            </span>
+          </div>
           <div className="flex gap-6 text-white/60 text-sm">
             <Link href="/privacy" className="hover:text-white">
               Privacy

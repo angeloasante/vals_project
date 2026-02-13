@@ -24,8 +24,32 @@ const playfairDisplay = Playfair_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://vals.love"),
-  title: "For Us 💕",
-  description: "Made with love for you",
+  title: {
+    default: "vals.love - Create Beautiful Valentine's Pages for Your Love 💕",
+    template: "%s | vals.love",
+  },
+  description: "Create stunning, personalized Valentine's Day websites for your special person. Add photos, poems, timelines, love letters, and more. Share with a unique link. Free forever!",
+  keywords: [
+    "valentine",
+    "valentines day",
+    "love page",
+    "romantic website",
+    "valentine card",
+    "love letter",
+    "couples",
+    "anniversary",
+    "relationship",
+    "gift for partner",
+    "digital valentine",
+    "love poems",
+    "photo gallery",
+  ],
+  authors: [
+    { name: "Travis Moore", url: "https://travismoore.com" },
+    { name: "Travis Moore", url: "https://angeloasante.com" },
+  ],
+  creator: "Travis Moore",
+  publisher: "vals.love",
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -36,25 +60,43 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "For Us 💕",
-    description: "Spread The Love... Made with love for my special person",
+    title: "vals.love - Create Beautiful Valentine's Pages 💕",
+    description: "Create stunning, personalized Valentine's Day websites for your special person. Add photos, poems, timelines, love letters & more. Free forever!",
     url: "https://vals.love",
-    siteName: "For Us",
+    siteName: "vals.love",
     images: [
       {
         url: "/og-main.png",
         width: 1200,
         height: 630,
-        alt: "Spread The Love - Valentine's Day",
+        alt: "vals.love - Create Beautiful Valentine's Pages",
       },
     ],
     type: "website",
+    locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "For Us 💕",
-    description: "Spread The Love... Made with love for my special person",
+    title: "vals.love - Create Beautiful Valentine's Pages 💕",
+    description: "Create stunning, personalized Valentine's Day websites for your special person. Free forever!",
     images: ["/og-main.png"],
+    creator: "@travis_moore",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    // Add your verification codes here when you have them
+    // google: "your-google-verification-code",
+    // yandex: "your-yandex-verification-code",
   },
 };
 
