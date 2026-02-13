@@ -192,8 +192,13 @@ export default function UserPage() {
         bucketList,
         openWhenNotes,
         poems,
-        // These will use defaults if not customized (future feature)
-        musicSettings: {},
+        // Music settings
+        musicSettings: {
+          songUrl: page.song_url || "",
+          songTitle: page.song_title || "Our Song",
+          artist: page.song_artist || "For Us 💕",
+          albumCover: page.song_cover || "",
+        },
         coupons: [],
         // Visibility settings
         showBucketList: page.show_bucket_list !== false,

@@ -91,3 +91,16 @@ ADD COLUMN IF NOT EXISTS virus_final_submessage TEXT DEFAULT 'Every moment with 
 
 ALTER TABLE public.valentine_pages 
 ADD COLUMN IF NOT EXISTS virus_final_button TEXT DEFAULT 'Fine, YES! I love you too! ❤️';
+
+-- Music/Song customization
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS song_url TEXT;
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS song_title TEXT DEFAULT 'Our Song';
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS song_artist TEXT DEFAULT 'For Us 💕';
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS song_cover TEXT;

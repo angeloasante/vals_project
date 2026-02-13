@@ -109,6 +109,62 @@ interface PoemItem {
   order_index: number;
 }
 
+// Helper function to convert AudioBuffer to WAV
+function audioBufferToWav(buffer: AudioBuffer): ArrayBuffer {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const bufferOut = new ArrayBuffer(length);
+  const view = new DataView(bufferOut);
+  const channels: Float32Array[] = [];
+  let sample: number;
+  let offset = 0;
+  let pos = 0;
+
+  // Write WAVE header
+  setUint32(0x46464952); // "RIFF"
+  setUint32(length - 8); // file length - 8
+  setUint32(0x45564157); // "WAVE"
+
+  setUint32(0x20746d66); // "fmt " chunk
+  setUint32(16); // length = 16
+  setUint16(1); // PCM (uncompressed)
+  setUint16(numOfChan);
+  setUint32(buffer.sampleRate);
+  setUint32(buffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
+  setUint16(numOfChan * 2); // block-align
+  setUint16(16); // 16-bit
+
+  setUint32(0x61746164); // "data" - chunk
+  setUint32(length - pos - 4); // chunk length
+
+  // Write interleaved data
+  for (let i = 0; i < buffer.numberOfChannels; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+
+  while (pos < length) {
+    for (let i = 0; i < numOfChan; i++) {
+      sample = Math.max(-1, Math.min(1, channels[i][offset])); // clamp
+      sample = (sample < 0 ? sample * 0x8000 : sample * 0x7fff) | 0; // scale to 16-bit signed int
+      view.setInt16(pos, sample, true); // write 16-bit sample
+      pos += 2;
+    }
+    offset++;
+  }
+
+  return bufferOut;
+
+  function setUint16(data: number) {
+    view.setUint16(pos, data, true);
+    pos += 2;
+  }
+
+  function setUint32(data: number) {
+    view.setUint32(pos, data, true);
+    pos += 4;
+  }
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("settings");
@@ -155,6 +211,10 @@ export default function DashboardPage() {
   
   // Music settings state
   const [musicSettings, setMusicSettings] = useState<MusicSettings>({ song_url: "", song_title: "", artist: "", album_cover: "" });
+  const [extractingAudio, setExtractingAudio] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   
   // Coupons state
   const [coupons, setCoupons] = useState<CouponItem[]>([]);
@@ -311,6 +371,13 @@ export default function DashboardPage() {
       setVirusFinalMessage(pageData.virus_final_message || "At this point you don't even have an option, we locked in 😂😂");
       setVirusFinalSubmessage(pageData.virus_final_submessage || "Every moment with you is a treasure. Please be my Valentine? 🥺");
       setVirusFinalButton(pageData.virus_final_button || "Fine, YES! I love you too! ❤️");
+      // Music settings
+      setMusicSettings({
+        song_url: pageData.song_url || "",
+        song_title: pageData.song_title || "Our Song",
+        artist: pageData.song_artist || "For Us 💕",
+        album_cover: pageData.song_cover || "",
+      });
 
       // Load gallery items
       const { data: galleryData } = await supabase
@@ -431,6 +498,11 @@ export default function DashboardPage() {
         virus_final_message: virusFinalMessage,
         virus_final_submessage: virusFinalSubmessage,
         virus_final_button: virusFinalButton,
+        // Music settings
+        song_url: musicSettings.song_url,
+        song_title: musicSettings.song_title,
+        song_artist: musicSettings.artist,
+        song_cover: musicSettings.album_cover,
       })
       .eq("id", page.id);
 
@@ -1420,6 +1492,7 @@ export default function DashboardPage() {
             <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
               {[
                 { id: "settings", label: "⚙️ Settings" },
+                { id: "music", label: "🎵 Music" },
                 { id: "gallery", label: "📸 Gallery" },
                 { id: "timeline", label: "📅 Timeline" },
                 { id: "reasons", label: "💕 Reasons" },
@@ -1519,6 +1592,229 @@ export default function DashboardPage() {
                     className="w-full bg-white text-rose-600 px-6 py-3 rounded-xl font-semibold hover:bg-rose-50 transition-all disabled:opacity-50"
                   >
                     {saving ? "Saving..." : "Save Settings"}
+                  </button>
+                </div>
+              )}
+
+              {/* Music Tab */}
+              {activeTab === "music" && (
+                <div className="space-y-6">
+                  <div>
+                    <h2 className="text-lg font-bold text-white mb-2">🎵 Our Song</h2>
+                    <p className="text-rose-200/70 text-sm mb-6">
+                      Upload a video with music and we&apos;ll extract the audio to use as your song.
+                    </p>
+                  </div>
+
+                  {/* Current Song Info */}
+                  {musicSettings.song_url && (
+                    <div className="bg-rose-900/30 rounded-xl p-4 border border-rose-800/30">
+                      <p className="text-white font-medium mb-2">Current Song</p>
+                      <div className="flex items-center gap-4">
+                        {musicSettings.album_cover && (
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden">
+                            <Image src={musicSettings.album_cover} alt="Album cover" fill className="object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-white font-medium">{musicSettings.song_title || "Our Song"}</p>
+                          <p className="text-rose-200/70 text-sm">{musicSettings.artist || "For Us 💕"}</p>
+                        </div>
+                        <audio src={musicSettings.song_url} controls className="h-10" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Video */}
+                  <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                    <h3 className="text-white font-medium mb-4">Upload Your Song</h3>
+                    <p className="text-rose-200/60 text-sm mb-4">
+                      Upload an audio file (MP3, WAV, etc.) or a video file and we&apos;ll extract the audio.
+                    </p>
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="audio/*,video/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file && page) {
+                          setExtractingAudio(true);
+                          try {
+                            // Check if it's an audio or video file
+                            const isVideo = file.type.startsWith("video/");
+                            
+                            if (isVideo) {
+                              // Extract audio from video using browser API
+                              const video = document.createElement("video");
+                              video.src = URL.createObjectURL(file);
+                              await new Promise((resolve) => {
+                                video.onloadedmetadata = resolve;
+                              });
+
+                              // Create audio context to process
+                              const audioContext = new AudioContext();
+                              const response = await fetch(video.src);
+                              const arrayBuffer = await response.arrayBuffer();
+                              const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                              
+                              // Convert to WAV
+                              const wavBuffer = audioBufferToWav(audioBuffer);
+                              const audioBlob = new Blob([wavBuffer], { type: "audio/wav" });
+                              
+                              const formData = new FormData();
+                              formData.append("audio", audioBlob, "audio.wav");
+                              formData.append("pageId", page.id);
+
+                              const uploadResponse = await fetch("/api/extract-audio", {
+                                method: "POST",
+                                body: formData,
+                              });
+
+                              const data = await uploadResponse.json();
+                              if (data.success) {
+                                setMusicSettings({
+                                  ...musicSettings,
+                                  song_url: data.audioUrl,
+                                });
+                                setMessage({ type: "success", text: "Audio extracted successfully!" });
+                              } else {
+                                throw new Error(data.error);
+                              }
+                              
+                              URL.revokeObjectURL(video.src);
+                            } else {
+                              // Direct audio upload
+                              const formData = new FormData();
+                              formData.append("audio", file);
+                              formData.append("pageId", page.id);
+
+                              const uploadResponse = await fetch("/api/extract-audio", {
+                                method: "POST",
+                                body: formData,
+                              });
+
+                              const data = await uploadResponse.json();
+                              if (data.success) {
+                                setMusicSettings({
+                                  ...musicSettings,
+                                  song_url: data.audioUrl,
+                                });
+                                setMessage({ type: "success", text: "Song uploaded successfully!" });
+                              } else {
+                                throw new Error(data.error);
+                              }
+                            }
+                          } catch (error) {
+                            setMessage({ type: "error", text: error instanceof Error ? error.message : "Failed to upload audio" });
+                          } finally {
+                            setExtractingAudio(false);
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={extractingAudio}
+                      className="w-full py-4 border-2 border-dashed border-white/30 rounded-xl text-white/70 hover:border-white/50 hover:text-white transition-all flex items-center justify-center gap-2"
+                    >
+                      {extractingAudio ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-2xl">🎵</span>
+                          Click to upload audio or video
+                        </>
+                      )}
+                    </button>
+                    <p className="text-rose-200/50 text-xs mt-2 text-center">
+                      Supported: MP3, WAV, MP4, MOV, WebM, etc.
+                    </p>
+                  </div>
+
+                  {/* Song Details */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-rose-100 mb-2">Song Title</label>
+                      <input
+                        type="text"
+                        value={musicSettings.song_title}
+                        onChange={(e) => setMusicSettings({ ...musicSettings, song_title: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Our Song"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-rose-100 mb-2">Artist / Dedicated To</label>
+                      <input
+                        type="text"
+                        value={musicSettings.artist}
+                        onChange={(e) => setMusicSettings({ ...musicSettings, artist: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="For Us 💕"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-rose-100 mb-2">Album Cover</label>
+                      <div className="flex gap-4">
+                        {musicSettings.album_cover && (
+                          <div className="relative w-20 h-20 rounded-lg overflow-hidden">
+                            <Image src={musicSettings.album_cover} alt="Cover" fill className="object-cover" />
+                            <button
+                              onClick={() => setMusicSettings({ ...musicSettings, album_cover: "" })}
+                              className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        )}
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file && page) {
+                              setUploadingCover(true);
+                              try {
+                                const ext = file.name.split(".").pop();
+                                const fileName = `${page.id}/album-cover-${Date.now()}.${ext}`;
+                                const { error } = await supabase.storage
+                                  .from("gallery")
+                                  .upload(fileName, file);
+                                if (!error) {
+                                  const { data: { publicUrl } } = supabase.storage
+                                    .from("gallery")
+                                    .getPublicUrl(fileName);
+                                  setMusicSettings({ ...musicSettings, album_cover: publicUrl });
+                                }
+                              } finally {
+                                setUploadingCover(false);
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => coverInputRef.current?.click()}
+                          disabled={uploadingCover}
+                          className="flex-1 py-4 border-2 border-dashed border-white/30 rounded-xl text-white/70 hover:border-white/50 hover:text-white transition-all"
+                        >
+                          {uploadingCover ? "Uploading..." : "📷 Upload Cover Image"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleSaveSettings}
+                    disabled={saving}
+                    className="w-full bg-white text-rose-600 px-6 py-3 rounded-xl font-semibold hover:bg-rose-50 transition-all disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "💾 Save Music Settings"}
                   </button>
                 </div>
               )}
