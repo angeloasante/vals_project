@@ -30,6 +30,15 @@ interface GalleryItem {
   order_index: number;
 }
 
+interface TimelineItem {
+  id: string;
+  label: string;
+  title: string;
+  description: string;
+  image_src: string | null;
+  order_index: number;
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("settings");
@@ -41,8 +50,14 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [page, setPage] = useState<ValentinePage | null>(null);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [showTimelineForm, setShowTimelineForm] = useState(false);
+  const [editingTimeline, setEditingTimeline] = useState<TimelineItem | null>(null);
+  const [timelineForm, setTimelineForm] = useState({ label: "", title: "", description: "", imageSrc: "" });
+  const [uploadingTimelineImage, setUploadingTimelineImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const timelineImageInputRef = useRef<HTMLInputElement>(null);
   
   // Form states
   const [recipientName, setRecipientName] = useState("My Love");
@@ -114,6 +129,17 @@ export default function DashboardPage() {
 
       if (galleryData) {
         setGalleryItems(galleryData);
+      }
+
+      // Load timeline items
+      const { data: timelineData } = await supabase
+        .from("timeline_items")
+        .select("*")
+        .eq("page_id", pageData.id)
+        .order("order_index", { ascending: true });
+
+      if (timelineData) {
+        setTimelineItems(timelineData);
       }
     }
 
@@ -279,6 +305,146 @@ export default function DashboardPage() {
       console.error("Delete error:", error);
       setMessage({ type: "error", text: "Failed to delete photo" });
     }
+  };
+
+  // Timeline handlers
+  const handleTimelineImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile?.id) return;
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Only image files are allowed" });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage({ type: "error", text: "Image must be less than 5MB" });
+      return;
+    }
+
+    setUploadingTimelineImage(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${profile.id}/timeline-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("user-uploads")
+        .upload(fileName, file);
+
+      if (uploadError) {
+        setMessage({ type: "error", text: "Failed to upload image" });
+        setUploadingTimelineImage(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("user-uploads")
+        .getPublicUrl(fileName);
+
+      setTimelineForm({ ...timelineForm, imageSrc: urlData.publicUrl });
+    } catch {
+      setMessage({ type: "error", text: "Upload failed" });
+    }
+
+    setUploadingTimelineImage(false);
+    if (timelineImageInputRef.current) {
+      timelineImageInputRef.current.value = "";
+    }
+  };
+
+  const handleAddTimeline = async () => {
+    if (!page?.id || !timelineForm.label || !timelineForm.title) {
+      setMessage({ type: "error", text: "Please fill in label and title" });
+      return;
+    }
+
+    setSaving(true);
+    
+    const { data: newItem, error } = await supabase
+      .from("timeline_items")
+      .insert({
+        page_id: page.id,
+        label: timelineForm.label,
+        title: timelineForm.title,
+        description: timelineForm.description,
+        image_src: timelineForm.imageSrc || null,
+        order_index: timelineItems.length,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to add timeline item" });
+    } else if (newItem) {
+      setTimelineItems((prev) => [...prev, newItem]);
+      setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
+      setShowTimelineForm(false);
+      setMessage({ type: "success", text: "Memory added!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleEditTimeline = async () => {
+    if (!editingTimeline) return;
+    
+    setSaving(true);
+    
+    const { error } = await supabase
+      .from("timeline_items")
+      .update({
+        label: timelineForm.label,
+        title: timelineForm.title,
+        description: timelineForm.description,
+        image_src: timelineForm.imageSrc || null,
+      })
+      .eq("id", editingTimeline.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update" });
+    } else {
+      setTimelineItems((prev) =>
+        prev.map((item) =>
+          item.id === editingTimeline.id
+            ? { ...item, label: timelineForm.label, title: timelineForm.title, description: timelineForm.description, image_src: timelineForm.imageSrc || null }
+            : item
+        )
+      );
+      setEditingTimeline(null);
+      setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
+      setMessage({ type: "success", text: "Memory updated!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleDeleteTimeline = async (item: TimelineItem) => {
+    if (!confirm("Delete this memory?")) return;
+
+    const { error } = await supabase
+      .from("timeline_items")
+      .delete()
+      .eq("id", item.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to delete" });
+    } else {
+      setTimelineItems((prev) => prev.filter((t) => t.id !== item.id));
+      setMessage({ type: "success", text: "Memory deleted" });
+    }
+  };
+
+  const startEditTimeline = (item: TimelineItem) => {
+    setEditingTimeline(item);
+    setTimelineForm({ label: item.label, title: item.title, description: item.description, imageSrc: item.image_src || "" });
+    setShowTimelineForm(true);
+  };
+
+  const cancelTimelineForm = () => {
+    setShowTimelineForm(false);
+    setEditingTimeline(null);
+    setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
   };
 
   const pageUrl = `https://vals.love/u/${profile?.username}`;
@@ -574,17 +740,166 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Your Story Timeline</h2>
-                    <button className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all">
-                      + Add Memory
-                    </button>
+                    {!showTimelineForm && (
+                      <button 
+                        onClick={() => setShowTimelineForm(true)}
+                        className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all"
+                      >
+                        + Add Memory
+                      </button>
+                    )}
                   </div>
+
+                  {/* Add/Edit Form */}
+                  {showTimelineForm && (
+                    <div className="bg-white/5 rounded-xl p-4 space-y-4 border border-white/10">
+                      <h3 className="text-white font-medium">
+                        {editingTimeline ? "Edit Memory" : "Add New Memory"}
+                      </h3>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Label (e.g., &quot;First Date&quot;)</label>
+                        <input
+                          type="text"
+                          value={timelineForm.label}
+                          onChange={(e) => setTimelineForm({ ...timelineForm, label: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="First Date"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={timelineForm.title}
+                          onChange={(e) => setTimelineForm({ ...timelineForm, title: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="The Day Everything Changed"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Description</label>
+                        <textarea
+                          value={timelineForm.description}
+                          onChange={(e) => setTimelineForm({ ...timelineForm, description: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                          rows={3}
+                          placeholder="Tell the story of this moment..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Photo (optional)</label>
+                        <div className="flex items-center gap-3">
+                          {timelineForm.imageSrc ? (
+                            <div className="relative w-20 h-20 rounded-lg overflow-hidden">
+                              <Image
+                                src={timelineForm.imageSrc}
+                                alt="Timeline photo"
+                                fill
+                                className="object-cover"
+                              />
+                              <button
+                                onClick={() => setTimelineForm({ ...timelineForm, imageSrc: "" })}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <input
+                                ref={timelineImageInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleTimelineImageUpload}
+                                className="hidden"
+                                id="timeline-image-upload"
+                              />
+                              <label
+                                htmlFor="timeline-image-upload"
+                                className={`px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-sm cursor-pointer hover:bg-white/20 transition-all ${
+                                  uploadingTimelineImage ? "opacity-50 cursor-not-allowed" : ""
+                                }`}
+                              >
+                                {uploadingTimelineImage ? "Uploading..." : "📷 Add Photo"}
+                              </label>
+                            </>
+                          )}
+                        </div>
+                        <p className="text-xs text-rose-100/50 mt-1">Max 5MB</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={editingTimeline ? handleEditTimeline : handleAddTimeline}
+                          disabled={saving || uploadingTimelineImage}
+                          className="flex-1 bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all disabled:opacity-50"
+                        >
+                          {saving ? "Saving..." : editingTimeline ? "Update" : "Add Memory"}
+                        </button>
+                        <button
+                          onClick={cancelTimelineForm}
+                          className="px-4 py-2 rounded-xl font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   
-                  <div className="text-center py-12 text-rose-100/70">
-                    <p className="text-4xl mb-4">📅</p>
-                    <p>No timeline items yet. Tell your love story!</p>
-                  </div>
+                  {timelineItems.length === 0 && !showTimelineForm ? (
+                    <div className="text-center py-12 text-rose-100/70">
+                      <p className="text-4xl mb-4">📅</p>
+                      <p>No timeline items yet. Tell your love story!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {timelineItems.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="bg-white/5 rounded-xl p-4 border border-white/10 group"
+                        >
+                          <div className="flex items-start gap-3">
+                            {item.image_src && (
+                              <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                                <Image
+                                  src={item.image_src}
+                                  alt=""
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-rose-300 text-xs font-mono">{item.label}</span>
+                                <span className="text-white/30 text-xs">#{index + 1}</span>
+                              </div>
+                              <h4 className="text-white font-medium">{item.title}</h4>
+                              {item.description && (
+                                <p className="text-rose-100/60 text-sm mt-1 line-clamp-2">{item.description}</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => startEditTimeline(item)}
+                                className="text-white/70 hover:text-white text-sm"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTimeline(item)}
+                                className="text-red-400 hover:text-red-300 text-sm"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <p className="text-sm text-rose-100/50">
-                    Coming soon: Edit timeline items directly!
+                    {timelineItems.length} memor{timelineItems.length !== 1 ? "ies" : "y"} in your story
                   </p>
                 </div>
               )}

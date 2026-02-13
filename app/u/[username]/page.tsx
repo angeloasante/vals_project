@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ValentinePage from "@/app/components/ValentinePage";
+import { GalleryItem } from "@/app/components/Gallery";
+import { TimelineItemData } from "@/app/components/Timeline";
 
 interface PageData {
   startDate: Date;
@@ -11,6 +13,8 @@ interface PageData {
   senderName: string;
   heroTitle: string;
   heroSubtitle: string;
+  galleryItems: GalleryItem[];
+  timelineItems: TimelineItemData[];
 }
 
 export default function UserPage() {
@@ -58,12 +62,45 @@ export default function UserPage() {
         return;
       }
 
+      // Get gallery items
+      const { data: galleryData } = await supabase
+        .from("gallery_items")
+        .select("*")
+        .eq("page_id", page.id)
+        .order("order_index", { ascending: true });
+
+      // Get timeline items
+      const { data: timelineData } = await supabase
+        .from("timeline_items")
+        .select("*")
+        .eq("page_id", page.id)
+        .order("order_index", { ascending: true });
+
+      // Transform gallery items
+      const galleryItems: GalleryItem[] = (galleryData || []).map((item) => ({
+        id: item.id,
+        src: item.src,
+        type: item.type || "image",
+        caption: item.caption || "",
+      }));
+
+      // Transform timeline items
+      const timelineItems: TimelineItemData[] = (timelineData || []).map((item) => ({
+        id: item.id,
+        label: item.label,
+        title: item.title,
+        description: item.description || "",
+        imageSrc: item.image_src,
+      }));
+
       setPageData({
         startDate: new Date(page.start_date),
         recipientName: page.recipient_name,
         senderName: page.sender_name,
         heroTitle: page.hero_title || "You are my forever.",
         heroSubtitle: page.hero_subtitle || "In all the world, there is no heart for me like yours. In all the world, there is no love for you like mine.",
+        galleryItems,
+        timelineItems,
       });
       setLoading(false);
     };
@@ -113,6 +150,8 @@ export default function UserPage() {
       senderName={pageData.senderName}
       heroTitle={pageData.heroTitle}
       heroSubtitle={pageData.heroSubtitle}
+      galleryItems={pageData.galleryItems}
+      timelineItems={pageData.timelineItems}
     />
   );
 }

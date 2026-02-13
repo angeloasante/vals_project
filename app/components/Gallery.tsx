@@ -5,89 +5,102 @@ import Image from "next/image";
 import Icon from "./ui/Icon";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
-// All your media from memories folder
-const GALLERY_ITEMS = [
+export interface GalleryItem {
+  id: string;
+  src: string;
+  type?: string;
+  caption?: string;
+}
+
+// Default gallery items for demo
+const DEFAULT_GALLERY_ITEMS: GalleryItem[] = [
   {
-    id: 1,
+    id: "1",
     src: "/memories/6bd5d6d1-d350-4b56-abc7-32532d94ba10.JPG",
     type: "image",
     caption: "You're everything to me 💕",
   },
   {
-    id: 2,
+    id: "2",
     src: "/memories/IMG_3819.jpg",
     type: "image",
     caption: "My favorite view 😍",
   },
   {
-    id: 3,
+    id: "3",
     src: "/memories/IMG_4384.PNG",
     type: "image",
     caption: "Beautiful inside and out 💝",
   },
   {
-    id: 4,
+    id: "4",
     src: "/memories/IMG_4387.PNG",
     type: "image",
     caption: "That face I love so much 🥰",
   },
   {
-    id: 5,
+    id: "5",
     src: "/memories/IMG_4389.PNG",
     type: "image",
     caption: "Always stunning ✨",
   },
   {
-    id: 6,
+    id: "6",
     src: "/memories/IMG_4391.PNG",
     type: "image",
     caption: "My whole heart 💖",
   },
   {
-    id: 7,
+    id: "7",
     src: "/memories/IMG_4826.jpg",
     type: "image",
     caption: "So beautiful 😍",
   },
   {
-    id: 8,
+    id: "8",
     src: "/memories/IMG_5562.jpg",
     type: "image",
     caption: "My cute zombie 🧟‍♀️💕",
   },
   {
-    id: 9,
+    id: "9",
     src: "/memories/dbd8cb1c-9a17-435b-8ef0-d460d5b3d6df.JPG",
     type: "image",
     caption: "The one who has my heart 👑",
   },
   {
-    id: 10,
+    id: "10",
     src: "/memories/temp_image_69296C31-DB69-45A0-97D7-76E1F2C7B526.JPEG",
     type: "image",
     caption: "Forever yours 💕",
   },
   {
-    id: 11,
+    id: "11",
     src: "/memories/6733322b35f94933b83cf9e9aa593551.MOV",
     type: "video",
     caption: "My cute dancer that dances like a chicken 🐔💃",
   },
   {
-    id: 12,
+    id: "12",
     src: "/memories/d66e3fa0f9ca4d199acfc97123410b43.MOV",
     type: "video",
     caption: "My fav yapper 🗣️😂",
   },
   {
-    id: 13,
+    id: "13",
     src: "/memories/ec3d6df9b597427d941a8cf3bd57403f.MOV",
     type: "video",
     caption: "My lawyer ⚖️👩‍⚖️",
   },
 ];
 
-export default function Gallery() {
+interface GalleryProps {
+  items?: GalleryItem[];
+}
+
+export default function Gallery({ items }: GalleryProps) {
+  // Use provided items or default to demo items
+  const galleryItems = items && items.length > 0 ? items : DEFAULT_GALLERY_ITEMS;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<"left" | "right" | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -149,7 +162,7 @@ export default function Gallery() {
   const swipeLeft = () => {
     setDirection("left");
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % GALLERY_ITEMS.length);
+      setCurrentIndex((prev) => (prev + 1) % galleryItems.length);
       setDirection(null);
       setDragOffset(0);
       setRotation(0);
@@ -159,16 +172,16 @@ export default function Gallery() {
   const swipeRight = () => {
     setDirection("right");
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % GALLERY_ITEMS.length);
+      setCurrentIndex((prev) => (prev + 1) % galleryItems.length);
       setDirection(null);
       setDragOffset(0);
       setRotation(0);
     }, 300);
   };
 
-  const currentItem = GALLERY_ITEMS[currentIndex];
-  const nextItem = GALLERY_ITEMS[(currentIndex + 1) % GALLERY_ITEMS.length];
-  const nextNextItem = GALLERY_ITEMS[(currentIndex + 2) % GALLERY_ITEMS.length];
+  const currentItem = galleryItems[currentIndex];
+  const nextItem = galleryItems[(currentIndex + 1) % galleryItems.length];
+  const nextNextItem = galleryItems[(currentIndex + 2) % galleryItems.length];
 
   // Determine swipe indicator opacity
   const likeOpacity = Math.min(Math.max(dragOffset / 100, 0), 1);
@@ -267,7 +280,7 @@ export default function Gallery() {
             ) : (
               <Image
                 src={currentItem.src}
-                alt={currentItem.caption}
+                alt={currentItem.caption || ""}
                 fill
                 className="object-cover pointer-events-none"
                 draggable={false}
@@ -353,7 +366,7 @@ export default function Gallery() {
 
         {/* Photo Counter */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex items-center gap-2">
-          {GALLERY_ITEMS.map((_, idx) => (
+          {galleryItems.map((_, idx) => (
             <div
               key={idx}
               className={`h-1.5 rounded-full transition-all duration-300 ${
@@ -369,7 +382,7 @@ export default function Gallery() {
       {/* Thumbnail Strip */}
       <div className="mt-24 overflow-x-auto pb-4 scrollbar-hide">
         <div className="flex gap-3 justify-center min-w-max px-4">
-          {GALLERY_ITEMS.map((item, idx) => (
+          {galleryItems.map((item, idx) => (
             <button
               key={item.id}
               onClick={() => setCurrentIndex(idx)}

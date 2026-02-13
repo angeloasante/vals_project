@@ -6,11 +6,11 @@ import Footer from "./Footer";
 import BackgroundEffects from "./BackgroundEffects";
 import Hero from "./Hero";
 import BentoGrid from "./bento/BentoGrid";
-import Timeline from "./Timeline";
+import Timeline, { TimelineItemData } from "./Timeline";
 import OpenWhenNotes from "./OpenWhenNotes";
 import BucketList from "./BucketList";
 import LoveCoupons from "./LoveCoupons";
-import Gallery from "./Gallery";
+import Gallery, { GalleryItem } from "./Gallery";
 import LoveBook from "./LoveBook";
 import CelebrationModal from "./modals/CelebrationModal";
 import NoteModal from "./modals/NoteModal";
@@ -25,6 +25,8 @@ interface ValentinePageProps {
   senderName?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  galleryItems?: GalleryItem[];
+  timelineItems?: TimelineItemData[];
 }
 
 export default function ValentinePage({ 
@@ -33,6 +35,8 @@ export default function ValentinePage({
   senderName = "Your Valentine",
   heroTitle = "You are my forever.",
   heroSubtitle = "In all the world, there is no heart for me like yours. In all the world, there is no love for you like mine.",
+  galleryItems,
+  timelineItems,
 }: ValentinePageProps) {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showRejection, setShowRejection] = useState(false);
@@ -82,11 +86,11 @@ export default function ValentinePage({
           onAcceptValentine={handleAcceptValentine}
           onRejectValentine={handleRejectValentine}
         />
-        <Timeline />
+        <Timeline items={timelineItems} />
         <OpenWhenNotes onOpenNote={handleOpenNote} />
         <BucketList />
         <LoveCoupons />
-        <Gallery />
+        <Gallery items={galleryItems} />
       </main>
 
       <Footer senderName={senderName} recipientName={recipientName} />
