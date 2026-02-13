@@ -103,6 +103,13 @@ export default function UserPage() {
         .eq("page_id", page.id)
         .order("order_index", { ascending: true });
 
+      // Get open when notes
+      const { data: openWhenData } = await supabase
+        .from("open_when_notes")
+        .select("*")
+        .eq("page_id", page.id)
+        .order("order_index", { ascending: true });
+
       // Transform gallery items
       const galleryItems: GalleryItem[] = (galleryData || []).map((item) => ({
         id: item.id,
@@ -133,6 +140,16 @@ export default function UserPage() {
         completed: item.completed || false,
       }));
 
+      // Transform open when notes
+      const openWhenNotes: OpenWhenNoteData[] = (openWhenData || []).map((item) => ({
+        id: item.id,
+        type: item.type,
+        title: item.title,
+        message: item.message,
+        icon: item.icon,
+        iconColor: item.icon_color,
+      }));
+
       setPageData({
         startDate: new Date(page.start_date),
         recipientName: page.recipient_name,
@@ -143,8 +160,8 @@ export default function UserPage() {
         timelineItems,
         reasons,
         bucketList,
+        openWhenNotes,
         // These will use defaults if not customized (future feature)
-        openWhenNotes: [],
         musicSettings: {},
         coupons: [],
         // Visibility settings

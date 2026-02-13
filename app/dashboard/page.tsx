@@ -116,6 +116,12 @@ export default function DashboardPage() {
   const [editingOpenWhen, setEditingOpenWhen] = useState<OpenWhenNote | null>(null);
   const [openWhenForm, setOpenWhenForm] = useState({ type: "", title: "", message: "", icon: "solar:heart-linear", iconColor: "text-rose-400" });
   
+  // AI Generation state
+  const [showAiPopup, setShowAiPopup] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiStyle, setAiStyle] = useState("romantic");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  
   // Music settings state
   const [musicSettings, setMusicSettings] = useState<MusicSettings>({ song_url: "", song_title: "", artist: "", album_cover: "" });
   
@@ -240,6 +246,17 @@ export default function DashboardPage() {
 
       if (bucketData) {
         setBucketList(bucketData);
+      }
+
+      // Load open when notes
+      const { data: openWhenData } = await supabase
+        .from("open_when_notes")
+        .select("*")
+        .eq("page_id", pageData.id)
+        .order("order_index", { ascending: true });
+
+      if (openWhenData) {
+        setOpenWhenNotes(openWhenData);
       }
     }
 
@@ -795,6 +812,138 @@ export default function DashboardPage() {
     setShowBucketForm(false);
     setEditingBucket(null);
     setBucketForm({ text: "", completed: false });
+  };
+
+  // Open When Notes handlers
+  const handleAddOpenWhen = async () => {
+    if (!page?.id || !openWhenForm.title.trim() || !openWhenForm.message.trim()) {
+      setMessage({ type: "error", text: "Please fill in title and message" });
+      return;
+    }
+
+    setSaving(true);
+    
+    const { data: newItem, error } = await supabase
+      .from("open_when_notes")
+      .insert({
+        page_id: page.id,
+        type: openWhenForm.type || openWhenForm.title.toLowerCase().replace(/\s+/g, '-'),
+        title: openWhenForm.title.trim(),
+        message: openWhenForm.message.trim(),
+        icon: openWhenForm.icon,
+        icon_color: openWhenForm.iconColor,
+        order_index: openWhenNotes.length,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to add love letter" });
+    } else if (newItem) {
+      setOpenWhenNotes((prev) => [...prev, newItem]);
+      setOpenWhenForm({ type: "", title: "", message: "", icon: "solar:heart-linear", iconColor: "text-rose-400" });
+      setShowOpenWhenForm(false);
+      setMessage({ type: "success", text: "Love letter added!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleEditOpenWhen = async () => {
+    if (!editingOpenWhen) return;
+    
+    setSaving(true);
+    
+    const { error } = await supabase
+      .from("open_when_notes")
+      .update({
+        title: openWhenForm.title.trim(),
+        message: openWhenForm.message.trim(),
+        icon: openWhenForm.icon,
+        icon_color: openWhenForm.iconColor,
+      })
+      .eq("id", editingOpenWhen.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update" });
+    } else {
+      setOpenWhenNotes((prev) =>
+        prev.map((item) =>
+          item.id === editingOpenWhen.id
+            ? { ...item, title: openWhenForm.title.trim(), message: openWhenForm.message.trim(), icon: openWhenForm.icon, icon_color: openWhenForm.iconColor }
+            : item
+        )
+      );
+      setEditingOpenWhen(null);
+      setOpenWhenForm({ type: "", title: "", message: "", icon: "solar:heart-linear", iconColor: "text-rose-400" });
+      setShowOpenWhenForm(false);
+      setMessage({ type: "success", text: "Love letter updated!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleDeleteOpenWhen = async (item: OpenWhenNote) => {
+    if (!confirm("Delete this love letter?")) return;
+
+    const { error } = await supabase
+      .from("open_when_notes")
+      .delete()
+      .eq("id", item.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to delete" });
+    } else {
+      setOpenWhenNotes((prev) => prev.filter((n) => n.id !== item.id));
+      setMessage({ type: "success", text: "Love letter deleted" });
+    }
+  };
+
+  const startEditOpenWhen = (item: OpenWhenNote) => {
+    setEditingOpenWhen(item);
+    setOpenWhenForm({ type: item.type, title: item.title, message: item.message, icon: item.icon, iconColor: item.icon_color });
+    setShowOpenWhenForm(true);
+  };
+
+  const cancelOpenWhenForm = () => {
+    setShowOpenWhenForm(false);
+    setEditingOpenWhen(null);
+    setOpenWhenForm({ type: "", title: "", message: "", icon: "solar:heart-linear", iconColor: "text-rose-400" });
+  };
+
+  // AI Love Letter Generator
+  const handleGenerateWithAI = async () => {
+    if (!aiPrompt.trim()) {
+      setMessage({ type: "error", text: "Please enter a vibe or context" });
+      return;
+    }
+    
+    setAiGenerating(true);
+    try {
+      const response = await fetch("/api/generate-love-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPrompt, style: aiStyle }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to generate" });
+        return;
+      }
+      
+      // Insert generated message into the form
+      setOpenWhenForm({ ...openWhenForm, message: data.message });
+      setShowAiPopup(false);
+      setAiPrompt("");
+      setMessage({ type: "success", text: "✨ Love letter generated!" });
+    } catch (error) {
+      console.error("AI generation error:", error);
+      setMessage({ type: "error", text: "Failed to generate. Please try again." });
+    } finally {
+      setAiGenerating(false);
+    }
   };
 
   // Gallery caption handler
@@ -1570,17 +1719,165 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Love Letters (Open When...)</h2>
+                    <div className="flex items-center gap-3">
+                      {/* Visibility Toggle */}
+                      <button
+                        onClick={handleToggleOpenWhenVisibility}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          showOpenWhenSection
+                            ? "bg-green-500/20 text-green-300 border border-green-400/30"
+                            : "bg-red-500/20 text-red-300 border border-red-400/30"
+                        }`}
+                      >
+                        {showOpenWhenSection ? "👁️ Visible" : "🚫 Hidden"}
+                      </button>
+                      {!showOpenWhenForm && (
+                        <button 
+                          onClick={() => setShowOpenWhenForm(true)}
+                          className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all"
+                        >
+                          + Add Letter
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                    <p className="text-rose-100/70 text-center py-8">
-                      <span className="text-4xl block mb-4">💌</span>
-                      Love Letters customization coming soon!
-                      <br />
-                      <span className="text-sm text-rose-100/50 mt-2 block">
-                        For now, default Open When messages will be shown.
-                      </span>
-                    </p>
-                  </div>
+
+                  {!showOpenWhenSection && (
+                    <div className="bg-yellow-500/10 border border-yellow-400/30 rounded-xl p-3 text-yellow-200 text-sm">
+                      ⚠️ This section is hidden on your page. Toggle visibility above to show it.
+                    </div>
+                  )}
+
+                  {/* Add/Edit Form */}
+                  {showOpenWhenForm && (
+                    <div className="bg-white/5 rounded-xl p-4 space-y-4 border border-white/10">
+                      <h3 className="text-white font-medium">
+                        {editingOpenWhen ? "Edit Love Letter" : "Add New Love Letter"}
+                      </h3>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Envelope Title (e.g., &quot;You&apos;re Mad&quot;)</label>
+                        <input
+                          type="text"
+                          value={openWhenForm.title}
+                          onChange={(e) => setOpenWhenForm({ ...openWhenForm, title: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="Open When You're Sad"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-sm text-rose-100">Message Inside</label>
+                          <button
+                            type="button"
+                            onClick={() => setShowAiPopup(true)}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-200 text-xs font-medium hover:from-purple-500/30 hover:to-pink-500/30 transition-all"
+                          >
+                            ✨ Generate with AI
+                          </button>
+                        </div>
+                        <textarea
+                          value={openWhenForm.message}
+                          onChange={(e) => setOpenWhenForm({ ...openWhenForm, message: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                          rows={4}
+                          placeholder="Write your heartfelt message here..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Icon</label>
+                        <select
+                          value={openWhenForm.icon}
+                          onChange={(e) => setOpenWhenForm({ ...openWhenForm, icon: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:border-white/40 outline-none"
+                        >
+                          <option value="solar:heart-linear">❤️ Heart</option>
+                          <option value="solar:fire-linear">🔥 Fire (Angry)</option>
+                          <option value="solar:cloud-rain-linear">🌧️ Rain (Sad)</option>
+                          <option value="solar:map-point-search-linear">📍 Location (Miss Me)</option>
+                          <option value="solar:sun-linear">☀️ Sun (Happy)</option>
+                          <option value="solar:moon-linear">🌙 Moon (Night)</option>
+                          <option value="solar:star-linear">⭐ Star</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Icon Color</label>
+                        <select
+                          value={openWhenForm.iconColor}
+                          onChange={(e) => setOpenWhenForm({ ...openWhenForm, iconColor: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:border-white/40 outline-none"
+                        >
+                          <option value="text-rose-400">Pink</option>
+                          <option value="text-red-400">Red</option>
+                          <option value="text-blue-400">Blue</option>
+                          <option value="text-yellow-400">Yellow</option>
+                          <option value="text-green-400">Green</option>
+                          <option value="text-purple-400">Purple</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={editingOpenWhen ? handleEditOpenWhen : handleAddOpenWhen}
+                          disabled={saving}
+                          className="flex-1 bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all disabled:opacity-50"
+                        >
+                          {saving ? "Saving..." : editingOpenWhen ? "Update" : "Add Letter"}
+                        </button>
+                        <button
+                          onClick={cancelOpenWhenForm}
+                          className="px-4 py-2 rounded-xl font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {openWhenNotes.length === 0 && !showOpenWhenForm ? (
+                    <div className="text-center py-12 text-rose-100/70">
+                      <p className="text-4xl mb-4">💌</p>
+                      <p>No love letters yet. Add your first one!</p>
+                      <p className="text-sm mt-2 text-rose-100/50">
+                        Create messages for when they&apos;re sad, mad, or missing you
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {openWhenNotes.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="bg-white/5 rounded-xl p-4 border border-white/10 group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-rose-300 text-xs">💌 Letter #{index + 1}</span>
+                              </div>
+                              <h4 className="text-white font-medium">Open When: {item.title}</h4>
+                              <p className="text-rose-100/60 text-sm mt-1 line-clamp-2">{item.message}</p>
+                            </div>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => startEditOpenWhen(item)}
+                                className="text-white/70 hover:text-white text-sm"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteOpenWhen(item)}
+                                className="text-red-400 hover:text-red-300 text-sm"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-rose-100/50">
+                    {openWhenNotes.length} love letter{openWhenNotes.length !== 1 ? "s" : ""} created
+                  </p>
                 </div>
               )}
 
@@ -1870,6 +2167,79 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Generation Popup */}
+      {showAiPopup && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-rose-900 to-pink-900 rounded-2xl p-6 max-w-md w-full border border-white/20 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                ✨ AI Love Letter Generator
+              </h3>
+              <button
+                onClick={() => { setShowAiPopup(false); setAiPrompt(""); }}
+                className="text-white/60 hover:text-white text-xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <p className="text-rose-100/80 text-sm mb-4">
+              Describe the vibe or situation, and AI will write a heartfelt message for you!
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-rose-100 mb-1">What&apos;s the vibe?</label>
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                  placeholder="e.g., when they're stressed about work, feeling lonely, need motivation..."
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-rose-100 mb-1">Style</label>
+                <select
+                  value={aiStyle}
+                  onChange={(e) => setAiStyle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:border-white/40 outline-none"
+                >
+                  <option value="romantic">💕 Romantic & Poetic</option>
+                  <option value="funny">😂 Funny & Playful</option>
+                  <option value="comforting">🤗 Comforting & Warm</option>
+                  <option value="passionate">🔥 Passionate & Intense</option>
+                  <option value="sweet">🍭 Sweet & Simple</option>
+                </select>
+              </div>
+              
+              <button
+                onClick={handleGenerateWithAI}
+                disabled={aiGenerating || !aiPrompt.trim()}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-xl font-medium hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {aiGenerating ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Generating magic...
+                  </>
+                ) : (
+                  <>
+                    ✨ Generate Love Letter
+                  </>
+                )}
+              </button>
+              
+              <p className="text-rose-100/50 text-xs text-center">
+                Powered by GPT-4o • You can edit the result after
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
