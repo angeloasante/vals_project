@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface Profile {
   id: string;
@@ -169,7 +170,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("settings");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [hearts, setHearts] = useState<Array<{ id: number; left: number; top: number; size: number; delay: number; duration: number }>>([]);
   const [previewMode, setPreviewMode] = useState<"mobile" | "desktop">("mobile");
   
@@ -453,7 +453,6 @@ export default function DashboardPage() {
     if (!page?.id) return;
     
     setSaving(true);
-    setMessage(null);
 
     const { error } = await supabase
       .from("valentine_pages")
@@ -507,9 +506,9 @@ export default function DashboardPage() {
       .eq("id", page.id);
 
     if (error) {
-      setMessage({ type: "error", text: error.message });
+      toast.error(error.message);
     } else {
-      setMessage({ type: "success", text: "Settings saved!" });
+      toast.success("Settings saved!");
     }
     
     setSaving(false);
@@ -526,10 +525,7 @@ export default function DashboardPage() {
       .update({ is_published: newStatus })
       .eq("id", page.id);
       
-    setMessage({ 
-      type: "success", 
-      text: newStatus ? "Your page is now live!" : "Page unpublished" 
-    });
+    toast.success(newStatus ? "Your page is now live!" : "Page unpublished");
   };
 
   // Visibility toggle handlers - auto-save to database
@@ -544,10 +540,7 @@ export default function DashboardPage() {
       .update({ show_bucket_list: newValue })
       .eq("id", page.id);
       
-    setMessage({ 
-      type: "success", 
-      text: newValue ? "Bucket list is now visible" : "Bucket list is now hidden" 
-    });
+    toast.success(newValue ? "Bucket list is now visible" : "Bucket list is now hidden");
   };
 
   const handleToggleOpenWhenVisibility = async () => {
@@ -561,10 +554,7 @@ export default function DashboardPage() {
       .update({ show_open_when: newValue })
       .eq("id", page.id);
       
-    setMessage({ 
-      type: "success", 
-      text: newValue ? "Love letters are now visible" : "Love letters are now hidden" 
-    });
+    toast.success(newValue ? "Love letters are now visible" : "Love letters are now hidden");
   };
 
   const handleToggleCouponsVisibility = async () => {
@@ -578,10 +568,7 @@ export default function DashboardPage() {
       .update({ show_coupons: newValue })
       .eq("id", page.id);
       
-    setMessage({ 
-      type: "success", 
-      text: newValue ? "Coupons are now visible" : "Coupons are now hidden" 
-    });
+    toast.success(newValue ? "Coupons are now visible" : "Coupons are now hidden");
   };
 
   const handleTogglePoemsVisibility = async () => {
@@ -595,10 +582,7 @@ export default function DashboardPage() {
       .update({ show_poems: newValue })
       .eq("id", page.id);
       
-    setMessage({ 
-      type: "success", 
-      text: newValue ? "Poems are now visible" : "Poems are now hidden" 
-    });
+    toast.success(newValue ? "Poems are now visible" : "Poems are now hidden");
   };
 
   const handleToggleTimelineVisibility = async () => {
@@ -612,10 +596,7 @@ export default function DashboardPage() {
       .update({ show_timeline: newValue })
       .eq("id", page.id);
       
-    setMessage({ 
-      type: "success", 
-      text: newValue ? "Timeline is now visible" : "Timeline is now hidden" 
-    });
+    toast.success(newValue ? "Timeline is now visible" : "Timeline is now hidden");
   };
 
   const handleToggleGalleryVisibility = async () => {
@@ -629,10 +610,7 @@ export default function DashboardPage() {
       .update({ show_gallery: newValue })
       .eq("id", page.id);
       
-    setMessage({ 
-      type: "success", 
-      text: newValue ? "Gallery is now visible" : "Gallery is now hidden" 
-    });
+    toast.success(newValue ? "Gallery is now visible" : "Gallery is now hidden");
   };
 
   const handleLogout = async () => {
@@ -646,19 +624,18 @@ export default function DashboardPage() {
     if (!files || files.length === 0 || !page?.id || !profile?.id) return;
 
     setUploadingPhoto(true);
-    setMessage(null);
 
     try {
       for (const file of Array.from(files)) {
         // Validate file type
         if (!file.type.startsWith("image/")) {
-          setMessage({ type: "error", text: "Only image files are allowed" });
+          toast.error("Only image files are allowed");
           continue;
         }
 
         // Validate file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-          setMessage({ type: "error", text: "Image must be less than 5MB" });
+          toast.error("Image must be less than 5MB");
           continue;
         }
 
@@ -673,7 +650,7 @@ export default function DashboardPage() {
 
         if (uploadError) {
           console.error("Upload error:", uploadError);
-          setMessage({ type: "error", text: "Failed to upload image" });
+          toast.error("Failed to upload image");
           continue;
         }
 
@@ -696,7 +673,7 @@ export default function DashboardPage() {
 
         if (dbError) {
           console.error("DB error:", dbError);
-          setMessage({ type: "error", text: "Failed to save image" });
+          toast.error("Failed to save image");
           continue;
         }
 
@@ -705,10 +682,10 @@ export default function DashboardPage() {
         }
       }
 
-      setMessage({ type: "success", text: "Photo(s) uploaded!" });
+      toast.success("Photo(s) uploaded!");
     } catch (error) {
       console.error("Upload error:", error);
-      setMessage({ type: "error", text: "Something went wrong" });
+      toast.error("Something went wrong");
     }
 
     setUploadingPhoto(false);
@@ -739,16 +716,16 @@ export default function DashboardPage() {
         .eq("id", item.id);
 
       if (error) {
-        setMessage({ type: "error", text: "Failed to delete photo" });
+        toast.error("Failed to delete photo");
         return;
       }
 
       // Update local state
       setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
-      setMessage({ type: "success", text: "Photo deleted" });
+      toast.success("Photo deleted");
     } catch (error) {
       console.error("Delete error:", error);
-      setMessage({ type: "error", text: "Failed to delete photo" });
+      toast.error("Failed to delete photo");
     }
   };
 
@@ -758,12 +735,12 @@ export default function DashboardPage() {
     if (!file || !profile?.id) return;
 
     if (!file.type.startsWith("image/")) {
-      setMessage({ type: "error", text: "Only image files are allowed" });
+      toast.error("Only image files are allowed");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setMessage({ type: "error", text: "Image must be less than 5MB" });
+      toast.error("Image must be less than 5MB");
       return;
     }
 
@@ -778,7 +755,7 @@ export default function DashboardPage() {
         .upload(fileName, file);
 
       if (uploadError) {
-        setMessage({ type: "error", text: "Failed to upload image" });
+        toast.error("Failed to upload image");
         setUploadingTimelineImage(false);
         return;
       }
@@ -789,7 +766,7 @@ export default function DashboardPage() {
 
       setTimelineForm({ ...timelineForm, imageSrc: urlData.publicUrl });
     } catch {
-      setMessage({ type: "error", text: "Upload failed" });
+      toast.error("Upload failed");
     }
 
     setUploadingTimelineImage(false);
@@ -800,7 +777,7 @@ export default function DashboardPage() {
 
   const handleAddTimeline = async () => {
     if (!page?.id || !timelineForm.label || !timelineForm.title) {
-      setMessage({ type: "error", text: "Please fill in label and title" });
+      toast.error("Please fill in label and title");
       return;
     }
 
@@ -820,12 +797,12 @@ export default function DashboardPage() {
       .single();
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to add timeline item" });
+      toast.error("Failed to add timeline item");
     } else if (newItem) {
       setTimelineItems((prev) => [...prev, newItem]);
       setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
       setShowTimelineForm(false);
-      setMessage({ type: "success", text: "Memory added!" });
+      toast.success("Memory added!");
     }
     
     setSaving(false);
@@ -847,7 +824,7 @@ export default function DashboardPage() {
       .eq("id", editingTimeline.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to update" });
+      toast.error("Failed to update");
     } else {
       setTimelineItems((prev) =>
         prev.map((item) =>
@@ -858,7 +835,7 @@ export default function DashboardPage() {
       );
       setEditingTimeline(null);
       setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
-      setMessage({ type: "success", text: "Memory updated!" });
+      toast.success("Memory updated!");
     }
     
     setSaving(false);
@@ -873,10 +850,10 @@ export default function DashboardPage() {
       .eq("id", item.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to delete" });
+      toast.error("Failed to delete");
     } else {
       setTimelineItems((prev) => prev.filter((t) => t.id !== item.id));
-      setMessage({ type: "success", text: "Memory deleted" });
+      toast.success("Memory deleted");
     }
   };
 
@@ -895,7 +872,7 @@ export default function DashboardPage() {
   // Reasons handlers
   const handleAddReason = async () => {
     if (!page?.id || !reasonForm.text.trim()) {
-      setMessage({ type: "error", text: "Please enter a reason" });
+      toast.error("Please enter a reason");
       return;
     }
 
@@ -912,12 +889,12 @@ export default function DashboardPage() {
       .single();
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to add reason" });
+      toast.error("Failed to add reason");
     } else if (newItem) {
       setReasons((prev) => [...prev, newItem]);
       setReasonForm({ text: "" });
       setShowReasonForm(false);
-      setMessage({ type: "success", text: "Reason added!" });
+      toast.success("Reason added!");
     }
     
     setSaving(false);
@@ -934,7 +911,7 @@ export default function DashboardPage() {
       .eq("id", editingReason.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to update" });
+      toast.error("Failed to update");
     } else {
       setReasons((prev) =>
         prev.map((item) =>
@@ -944,7 +921,7 @@ export default function DashboardPage() {
       setEditingReason(null);
       setReasonForm({ text: "" });
       setShowReasonForm(false);
-      setMessage({ type: "success", text: "Reason updated!" });
+      toast.success("Reason updated!");
     }
     
     setSaving(false);
@@ -959,10 +936,10 @@ export default function DashboardPage() {
       .eq("id", item.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to delete" });
+      toast.error("Failed to delete");
     } else {
       setReasons((prev) => prev.filter((r) => r.id !== item.id));
-      setMessage({ type: "success", text: "Reason deleted" });
+      toast.success("Reason deleted");
     }
   };
 
@@ -981,7 +958,7 @@ export default function DashboardPage() {
   // Bucket list handlers
   const handleAddBucketItem = async () => {
     if (!page?.id || !bucketForm.text.trim()) {
-      setMessage({ type: "error", text: "Please enter a bucket list item" });
+      toast.error("Please enter a bucket list item");
       return;
     }
 
@@ -999,12 +976,12 @@ export default function DashboardPage() {
       .single();
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to add item" });
+      toast.error("Failed to add item");
     } else if (newItem) {
       setBucketList((prev) => [...prev, newItem]);
       setBucketForm({ text: "", completed: false });
       setShowBucketForm(false);
-      setMessage({ type: "success", text: "Bucket list item added!" });
+      toast.success("Bucket list item added!");
     }
     
     setSaving(false);
@@ -1024,7 +1001,7 @@ export default function DashboardPage() {
       .eq("id", editingBucket.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to update" });
+      toast.error("Failed to update");
     } else {
       setBucketList((prev) =>
         prev.map((item) =>
@@ -1036,7 +1013,7 @@ export default function DashboardPage() {
       setEditingBucket(null);
       setBucketForm({ text: "", completed: false });
       setShowBucketForm(false);
-      setMessage({ type: "success", text: "Item updated!" });
+      toast.success("Item updated!");
     }
     
     setSaving(false);
@@ -1051,10 +1028,10 @@ export default function DashboardPage() {
       .eq("id", item.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to delete" });
+      toast.error("Failed to delete");
     } else {
       setBucketList((prev) => prev.filter((b) => b.id !== item.id));
-      setMessage({ type: "success", text: "Item deleted" });
+      toast.success("Item deleted");
     }
   };
 
@@ -1067,7 +1044,7 @@ export default function DashboardPage() {
       .eq("id", item.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to update" });
+      toast.error("Failed to update");
     } else {
       setBucketList((prev) =>
         prev.map((b) => b.id === item.id ? { ...b, completed: newCompleted } : b)
@@ -1090,7 +1067,7 @@ export default function DashboardPage() {
   // Open When Notes handlers
   const handleAddOpenWhen = async () => {
     if (!page?.id || !openWhenForm.title.trim() || !openWhenForm.message.trim()) {
-      setMessage({ type: "error", text: "Please fill in title and message" });
+      toast.error("Please fill in title and message");
       return;
     }
 
@@ -1111,12 +1088,12 @@ export default function DashboardPage() {
       .single();
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to add love letter" });
+      toast.error("Failed to add love letter");
     } else if (newItem) {
       setOpenWhenNotes((prev) => [...prev, newItem]);
       setOpenWhenForm({ type: "", title: "", message: "", icon: "solar:heart-linear", iconColor: "text-rose-400" });
       setShowOpenWhenForm(false);
-      setMessage({ type: "success", text: "Love letter added!" });
+      toast.success("Love letter added!");
     }
     
     setSaving(false);
@@ -1138,7 +1115,7 @@ export default function DashboardPage() {
       .eq("id", editingOpenWhen.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to update" });
+      toast.error("Failed to update");
     } else {
       setOpenWhenNotes((prev) =>
         prev.map((item) =>
@@ -1150,7 +1127,7 @@ export default function DashboardPage() {
       setEditingOpenWhen(null);
       setOpenWhenForm({ type: "", title: "", message: "", icon: "solar:heart-linear", iconColor: "text-rose-400" });
       setShowOpenWhenForm(false);
-      setMessage({ type: "success", text: "Love letter updated!" });
+      toast.success("Love letter updated!");
     }
     
     setSaving(false);
@@ -1165,10 +1142,10 @@ export default function DashboardPage() {
       .eq("id", item.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to delete" });
+      toast.error("Failed to delete");
     } else {
       setOpenWhenNotes((prev) => prev.filter((n) => n.id !== item.id));
-      setMessage({ type: "success", text: "Love letter deleted" });
+      toast.success("Love letter deleted");
     }
   };
 
@@ -1187,7 +1164,7 @@ export default function DashboardPage() {
   // AI Love Letter Generator
   const handleGenerateWithAI = async () => {
     if (!aiPrompt.trim()) {
-      setMessage({ type: "error", text: "Please enter a vibe or context" });
+      toast.error("Please enter a vibe or context");
       return;
     }
     
@@ -1202,7 +1179,7 @@ export default function DashboardPage() {
       const data = await response.json();
       
       if (!response.ok) {
-        setMessage({ type: "error", text: data.error || "Failed to generate" });
+        toast.error(data.error || "Failed to generate");
         return;
       }
       
@@ -1210,10 +1187,10 @@ export default function DashboardPage() {
       setOpenWhenForm({ ...openWhenForm, message: data.message });
       setShowAiPopup(false);
       setAiPrompt("");
-      setMessage({ type: "success", text: "✨ Love letter generated!" });
+      toast.success("✨ Love letter generated!");
     } catch (error) {
       console.error("AI generation error:", error);
-      setMessage({ type: "error", text: "Failed to generate. Please try again." });
+      toast.error("Failed to generate. Please try again.");
     } finally {
       setAiGenerating(false);
     }
@@ -1222,7 +1199,7 @@ export default function DashboardPage() {
   // Poem CRUD handlers
   const handleAddPoem = async () => {
     if (!page?.id || !poemForm.title.trim() || !poemForm.content.trim()) {
-      setMessage({ type: "error", text: "Please fill in title and content" });
+      toast.error("Please fill in title and content");
       return;
     }
 
@@ -1239,12 +1216,12 @@ export default function DashboardPage() {
       .single();
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to add poem" });
+      toast.error("Failed to add poem");
     } else if (data) {
       setPoems([...poems, data]);
       setPoemForm({ title: "", content: "" });
       setShowPoemForm(false);
-      setMessage({ type: "success", text: "Poem added!" });
+      toast.success("Poem added!");
     }
     setSaving(false);
   };
@@ -1262,7 +1239,7 @@ export default function DashboardPage() {
       .eq("id", editingPoem.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to update poem" });
+      toast.error("Failed to update poem");
     } else {
       setPoems((prev) =>
         prev.map((item) =>
@@ -1274,7 +1251,7 @@ export default function DashboardPage() {
       setPoemForm({ title: "", content: "" });
       setShowPoemForm(false);
       setEditingPoem(null);
-      setMessage({ type: "success", text: "Poem updated!" });
+      toast.success("Poem updated!");
     }
     setSaving(false);
   };
@@ -1284,10 +1261,10 @@ export default function DashboardPage() {
 
     const { error } = await supabase.from("poems").delete().eq("id", item.id);
     if (error) {
-      setMessage({ type: "error", text: "Failed to delete poem" });
+      toast.error("Failed to delete poem");
     } else {
       setPoems((prev) => prev.filter((p) => p.id !== item.id));
-      setMessage({ type: "success", text: "Poem deleted!" });
+      toast.success("Poem deleted!");
     }
   };
 
@@ -1306,7 +1283,7 @@ export default function DashboardPage() {
   // AI Poem Generator
   const handleGeneratePoemWithAI = async () => {
     if (!aiPoemPrompt.trim()) {
-      setMessage({ type: "error", text: "Please enter a vibe or theme" });
+      toast.error("Please enter a vibe or theme");
       return;
     }
     
@@ -1321,7 +1298,7 @@ export default function DashboardPage() {
       const data = await response.json();
       
       if (!response.ok) {
-        setMessage({ type: "error", text: data.error || "Failed to generate" });
+        toast.error(data.error || "Failed to generate");
         return;
       }
       
@@ -1329,10 +1306,10 @@ export default function DashboardPage() {
       setPoemForm({ ...poemForm, content: data.poem });
       setShowAiPoemPopup(false);
       setAiPoemPrompt("");
-      setMessage({ type: "success", text: "✨ Poem generated!" });
+      toast.success("✨ Poem generated!");
     } catch (error) {
       console.error("AI poem generation error:", error);
-      setMessage({ type: "error", text: "Failed to generate. Please try again." });
+      toast.error("Failed to generate. Please try again.");
     } finally {
       setAiPoemGenerating(false);
     }
@@ -1351,12 +1328,12 @@ export default function DashboardPage() {
       .eq("id", item.id);
 
     if (error) {
-      setMessage({ type: "error", text: "Failed to update caption" });
+      toast.error("Failed to update caption");
     } else {
       setGalleryItems((prev) =>
         prev.map((g) => g.id === item.id ? { ...g, caption: galleryCaptionText } : g)
       );
-      setMessage({ type: "success", text: "Caption updated!" });
+      toast.success("Caption updated!");
     }
     setEditingGalleryCaption(null);
   };
@@ -1429,7 +1406,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 overflow-x-hidden">
         {/* Page URL & Publish Status */}
         <div className="bg-white/10 backdrop-blur rounded-2xl p-5 mb-8 border border-white/10">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1471,25 +1448,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Message */}
-        {message && (
-          <div
-            className={`mb-6 px-4 py-3 rounded-xl border ${
-              message.type === "success"
-                ? "bg-green-500/20 text-green-300 border-green-400/30"
-                : "bg-red-500/20 text-red-300 border-red-400/30"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
-
         {/* Main Content - Forms Left, Preview Right */}
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Side - Forms */}
-          <div>
+          <div className="min-w-0">
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
               {[
                 { id: "settings", label: "⚙️ Settings" },
                 { id: "music", label: "🎵 Music" },
@@ -1677,7 +1641,7 @@ export default function DashboardPage() {
                                   ...musicSettings,
                                   song_url: data.audioUrl,
                                 });
-                                setMessage({ type: "success", text: "Audio extracted successfully!" });
+                                toast.success("Audio extracted successfully!");
                               } else {
                                 throw new Error(data.error);
                               }
@@ -1700,13 +1664,13 @@ export default function DashboardPage() {
                                   ...musicSettings,
                                   song_url: data.audioUrl,
                                 });
-                                setMessage({ type: "success", text: "Song uploaded successfully!" });
+                                toast.success("Song uploaded successfully!");
                               } else {
                                 throw new Error(data.error);
                               }
                             }
                           } catch (error) {
-                            setMessage({ type: "error", text: error instanceof Error ? error.message : "Failed to upload audio" });
+                            toast.error(error instanceof Error ? error.message : "Failed to upload audio");
                           } finally {
                             setExtractingAudio(false);
                           }
@@ -3104,8 +3068,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Side - Live Preview */}
-          <div className="hidden lg:block">
-            <div className="sticky top-24">
+          <div className="order-first lg:order-last">
+            <div className="lg:sticky lg:top-24">
               {/* Preview Toggle */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-medium text-rose-100">Live Preview</h3>
@@ -3135,14 +3099,14 @@ export default function DashboardPage() {
 
               {/* Mobile Preview */}
               {previewMode === "mobile" && (
-                <div className="bg-gray-900 rounded-[3rem] p-3 shadow-2xl max-w-[320px] mx-auto">
+                <div className="bg-gray-900 rounded-[2rem] sm:rounded-[3rem] p-2 sm:p-3 shadow-2xl max-w-[280px] sm:max-w-[320px] mx-auto">
                   {/* Phone Notch */}
-                  <div className="bg-gray-900 h-6 rounded-t-[2.5rem] flex items-center justify-center">
-                    <div className="w-20 h-5 bg-black rounded-full" />
+                  <div className="bg-gray-900 h-5 sm:h-6 rounded-t-[1.5rem] sm:rounded-t-[2.5rem] flex items-center justify-center">
+                    <div className="w-16 sm:w-20 h-4 sm:h-5 bg-black rounded-full" />
                   </div>
                   
                   {/* Phone Screen */}
-                  <div className="bg-rose-600 rounded-[2rem] overflow-hidden h-[580px] relative overflow-y-auto scrollbar-hide">
+                  <div className="bg-rose-600 rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden h-[400px] sm:h-[580px] relative overflow-y-auto scrollbar-hide">
                     {/* Header */}
                     <div className="sticky top-0 z-20 bg-rose-600/90 backdrop-blur-sm px-4 py-2 flex justify-between items-center">
                       <span className="text-white/90 text-[10px] font-medium">For {recipientName || "my luv"} 💕</span>

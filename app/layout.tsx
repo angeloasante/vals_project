@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Dancing_Script, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/app/components/ui/sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,7 +23,7 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://sekgo.vals.love"),
+  metadataBase: new URL("https://vals.love"),
   title: "For Us 💕",
   description: "Made with love for you",
   icons: {
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "For Us 💕",
     description: "Spread The Love... Made with love for my special person",
-    url: "https://sekgo.vals.love",
+    url: "https://vals.love",
     siteName: "For Us",
     images: [
       {
@@ -85,6 +86,7 @@ export default function RootLayout({
         className={`${inter.variable} ${dancingScript.variable} ${playfairDisplay.variable} antialiased min-h-screen flex flex-col items-center selection:bg-rose-300 selection:text-rose-900`}
       >
         {children}
+        <Toaster richColors position="top-center" />
       </body>
     </html>
   );
