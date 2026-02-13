@@ -13,40 +13,62 @@ A SaaS platform where anyone can create personalized, interactive Valentine's Da
 - Secure login with Supabase Auth
 - Each user gets a unique page at `vals.love/u/[username]`
 
-### 📊 Dashboard
-- Easy-to-use dashboard to customize your page
+### 📊 Full Dashboard
+- Easy-to-use dashboard to customize your entire page
 - Live preview (mobile & desktop views)
 - Publish/unpublish toggle
+- Mobile-responsive design
+- Toast notifications for all actions
 - Manage all content from one place
 
-### 🎵 Our Song
+### 🎵 Our Song / Music Player
+- Upload your own audio files (MP3, WAV)
+- **Extract audio from videos** (MP4, MOV, WebM) - client-side processing
 - Custom music player with spinning vinyl animation
+- Add song title, artist, and album cover
 - Auto-plays your special song on loop
 - Play/pause controls with visual feedback
 
-### 📖 Love Book
-- Interactive book with page-flip animations
-- Collection of personalized poems and love letters
+### 📖 Love Poems
+- Add custom poems from the dashboard
+- **AI-powered poem generator** using GPT-4o
+- Multiple styles: romantic, funny, passionate, sweet, literary
+- Toggle section visibility on/off
 
-### 💝 Will You Be My Valentine?
-- Interactive valentine card with Yes/No buttons
-- "No" button triggers a love virus effect 😂
-- Celebration confetti when they say yes!
+### 💝 CTA Cards Customization
+- **Reason Card**: Customize title, subtitle, and buttons
+- **Valentine Card**: Customize label, question, Yes/No buttons
+- Full control over all card text
+
+### 🎭 Popup/Modal Customization
+- **Celebration popup** (when they say Yes)
+- **Rejection popup** with two stages of escalation
+- Customize all titles, messages, and button text
+
+### 💜 Love Virus Effect
+- Triggered when they click "No"
+- **Upload custom photos** that fly across screen
+- **Custom messages** that appear during the chaos
+- **Customizable final popup** with title, message, and button
 
 ### 📸 Photo Gallery
 - Upload your own photos from dashboard
 - Tinder-style swipeable gallery
 - Add captions to each photo
-- Supports images with beautiful display
+- Toggle visibility on/off
 
 ### 🕐 Memories Timeline
 - Create your own timeline of memories
 - Add photos to each timeline item (optional)
 - Tell your love story step by step
+- Toggle visibility on/off
 
 ### 💌 Open When Notes (Love Letters)
 - Envelope-style notes for different occasions
-- Customize messages for "when you're mad", "sad", "miss me"
+- Customize messages for any occasion
+- **AI-powered love letter generator** using GPT-4o
+- Multiple styles: romantic, funny, passionate, sweet, poetic
+- Custom icons and colors
 - Toggle visibility on/off
 
 ### 🎯 Why I Love You
@@ -69,10 +91,13 @@ A SaaS platform where anyone can create personalized, interactive Valentine's Da
 
 - **Framework:** Next.js 16 (App Router)
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS
+- **Styling:** Tailwind CSS v4
+- **UI Components:** shadcn/ui (sonner toasts)
 - **Database:** Supabase (PostgreSQL)
 - **Auth:** Supabase Auth
-- **Storage:** Supabase Storage (for photo uploads)
+- **Storage:** Supabase Storage (for uploads)
+- **AI:** OpenAI GPT-4o (love letters & poems)
+- **Audio:** Web Audio API (video-to-audio extraction)
 - **Fonts:** Inter, Dancing Script, Playfair Display
 - **Icons:** Iconify
 - **Deployment:** Vercel
@@ -85,6 +110,7 @@ A SaaS platform where anyone can create personalized, interactive Valentine's Da
 - Node.js 18+
 - npm or yarn
 - Supabase account
+- OpenAI API key (for AI features)
 
 ### Installation
 
@@ -100,7 +126,7 @@ npm install
 
 # Set up environment variables
 cp .env.example .env
-# Add your Supabase credentials to .env
+# Add your Supabase and OpenAI credentials to .env
 
 # Run database migrations in Supabase SQL Editor
 # See supabase/schema.sql and supabase/migrations/
@@ -116,6 +142,7 @@ Open [http://localhost:3000](http://localhost:3000) to view it locally.
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+OPENAI_API_KEY=your_openai_api_key
 ```
 
 ### Build for Production
@@ -131,14 +158,17 @@ npm start
 
 ### Tables
 - **profiles** - User profiles with username
-- **valentine_pages** - User page settings & content
+- **valentine_pages** - User page settings, CTA customization, virus effect, music
 - **gallery_items** - Photo gallery with captions
 - **timeline_items** - Story timeline with optional images
 - **reasons** - "Why I Love You" reasons
 - **bucket_list** - Bucket list items
+- **open_when_notes** - Love letters with icons
+- **poems** - Custom poems
+- **coupons** - Love coupons
 
 ### Storage Buckets
-- **user-uploads** - User uploaded photos
+- **user-uploads** - User uploaded photos and audio
 
 ---
 
@@ -146,16 +176,21 @@ npm start
 
 ```
 ├── app/
+│   ├── api/
+│   │   ├── extract-audio/   # Audio upload & processing
+│   │   ├── generate-love-letter/  # AI love letter generation
+│   │   └── generate-poem/   # AI poem generation
 │   ├── components/
 │   │   ├── bento/           # Bento grid cards
 │   │   ├── modals/          # Modal components
-│   │   ├── ui/              # Reusable UI
+│   │   ├── ui/              # Reusable UI (sonner toasts)
 │   │   ├── Gallery.tsx      # Swipeable gallery
 │   │   ├── Timeline.tsx     # Story timeline
 │   │   ├── BucketList.tsx   # Bucket list
+│   │   ├── LoveVirusEffect.tsx  # Flying photos effect
 │   │   └── ...
 │   ├── dashboard/
-│   │   └── page.tsx         # User dashboard
+│   │   └── page.tsx         # User dashboard (all features)
 │   ├── login/
 │   │   └── page.tsx         # Login page
 │   ├── signup/
@@ -165,8 +200,9 @@ npm start
 │   │       └── page.tsx     # Dynamic user pages
 │   └── page.tsx             # Landing page
 ├── lib/
-│   └── supabase/
-│       └── client.ts        # Supabase client
+│   ├── supabase/
+│   │   └── client.ts        # Supabase client
+│   └── utils.ts             # Utility functions
 ├── supabase/
 │   ├── schema.sql           # Database schema
 │   └── migrations/          # SQL migrations
@@ -180,11 +216,16 @@ npm start
 
 1. **Sign Up** - Create account with email + unique username
 2. **Dashboard** - Customize your page content
-   - Settings: Names, dates, titles
-   - Gallery: Upload photos with captions
-   - Timeline: Add your love story
-   - Reasons: Add why you love them
-   - Bucket List: Add goals together
+   - ⚙️ Settings: Names, dates, titles, visibility toggles
+   - 🎵 Music: Upload song or extract from video
+   - 📸 Gallery: Upload photos with captions
+   - 📅 Timeline: Add your love story
+   - 💕 Reasons: Add why you love them
+   - 📖 Poems: Write or AI-generate poems
+   - 📝 Bucket List: Add goals together
+   - 💌 Open When: Love letters (manual or AI)
+   - 🎟️ Coupons: Redeemable love coupons
+   - 💝 CTA Cards: Customize all card text
 3. **Publish** - Toggle your page live
 4. **Share** - Send `vals.love/u/yourusername` to your valentine!
 
@@ -198,7 +239,15 @@ Create something special for someone special. Every page is unique, every love s
 
 ---
 
-## 📄 License
+## 👨‍💻 Created By
 
-MIT License - Feel free to use and modify for your own projects.
+**Travis Moore**
+
+- 🌐 [travismoore.com](https://travismoore.com)
+- 🌐 [angeloasante.com](https://angeloasante.com)
+- 🔗 [biofolio.link/u/travis_moore](https://biofolio.link/u/travis_moore)
+
+---
+
+© 2026 vals.love. All rights reserved.
 
