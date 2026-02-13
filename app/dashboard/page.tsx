@@ -293,6 +293,58 @@ export default function DashboardPage() {
     });
   };
 
+  // Visibility toggle handlers - auto-save to database
+  const handleToggleBucketListVisibility = async () => {
+    if (!page?.id) return;
+    
+    const newValue = !showBucketListSection;
+    setShowBucketListSection(newValue);
+    
+    await supabase
+      .from("valentine_pages")
+      .update({ show_bucket_list: newValue })
+      .eq("id", page.id);
+      
+    setMessage({ 
+      type: "success", 
+      text: newValue ? "Bucket list is now visible" : "Bucket list is now hidden" 
+    });
+  };
+
+  const handleToggleOpenWhenVisibility = async () => {
+    if (!page?.id) return;
+    
+    const newValue = !showOpenWhenSection;
+    setShowOpenWhenSection(newValue);
+    
+    await supabase
+      .from("valentine_pages")
+      .update({ show_open_when: newValue })
+      .eq("id", page.id);
+      
+    setMessage({ 
+      type: "success", 
+      text: newValue ? "Love letters are now visible" : "Love letters are now hidden" 
+    });
+  };
+
+  const handleToggleCouponsVisibility = async () => {
+    if (!page?.id) return;
+    
+    const newValue = !showCouponsSection;
+    setShowCouponsSection(newValue);
+    
+    await supabase
+      .from("valentine_pages")
+      .update({ show_coupons: newValue })
+      .eq("id", page.id);
+      
+    setMessage({ 
+      type: "success", 
+      text: newValue ? "Coupons are now visible" : "Coupons are now hidden" 
+    });
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -1372,7 +1424,7 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-3">
                       {/* Visibility Toggle */}
                       <button
-                        onClick={() => setShowBucketListSection(!showBucketListSection)}
+                        onClick={handleToggleBucketListVisibility}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           showBucketListSection
                             ? "bg-green-500/20 text-green-300 border border-green-400/30"
