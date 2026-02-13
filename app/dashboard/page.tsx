@@ -25,6 +25,8 @@ interface ValentinePage {
   show_open_when: boolean;
   show_coupons: boolean;
   show_poems: boolean;
+  show_timeline: boolean;
+  show_gallery: boolean;
   // CTA Card customization
   reason_card_title: string;
   reason_card_subtitle: string;
@@ -189,6 +191,8 @@ export default function DashboardPage() {
   const [showOpenWhenSection, setShowOpenWhenSection] = useState(true);
   const [showCouponsSection, setShowCouponsSection] = useState(true);
   const [showPoemsSection, setShowPoemsSection] = useState(true);
+  const [showTimelineSection, setShowTimelineSection] = useState(true);
+  const [showGallerySection, setShowGallerySection] = useState(true);
 
   // CTA Card customization
   const [reasonCardTitle, setReasonCardTitle] = useState("Why I Love You");
@@ -269,6 +273,8 @@ export default function DashboardPage() {
       setShowOpenWhenSection(pageData.show_open_when !== false);
       setShowCouponsSection(pageData.show_coupons !== false);
       setShowPoemsSection(pageData.show_poems !== false);
+      setShowTimelineSection(pageData.show_timeline !== false);
+      setShowGallerySection(pageData.show_gallery !== false);
       // CTA Card settings
       setReasonCardTitle(pageData.reason_card_title || "Why I Love You");
       setReasonCardSubtitle(pageData.reason_card_subtitle || "Tap to reveal a reason");
@@ -380,6 +386,8 @@ export default function DashboardPage() {
         show_open_when: showOpenWhenSection,
         show_coupons: showCouponsSection,
         show_poems: showPoemsSection,
+        show_timeline: showTimelineSection,
+        show_gallery: showGallerySection,
         // CTA Card settings
         reason_card_title: reasonCardTitle,
         reason_card_subtitle: reasonCardSubtitle,
@@ -496,6 +504,40 @@ export default function DashboardPage() {
     setMessage({ 
       type: "success", 
       text: newValue ? "Poems are now visible" : "Poems are now hidden" 
+    });
+  };
+
+  const handleToggleTimelineVisibility = async () => {
+    if (!page?.id) return;
+    
+    const newValue = !showTimelineSection;
+    setShowTimelineSection(newValue);
+    
+    await supabase
+      .from("valentine_pages")
+      .update({ show_timeline: newValue })
+      .eq("id", page.id);
+      
+    setMessage({ 
+      type: "success", 
+      text: newValue ? "Timeline is now visible" : "Timeline is now hidden" 
+    });
+  };
+
+  const handleToggleGalleryVisibility = async () => {
+    if (!page?.id) return;
+    
+    const newValue = !showGallerySection;
+    setShowGallerySection(newValue);
+    
+    await supabase
+      .from("valentine_pages")
+      .update({ show_gallery: newValue })
+      .eq("id", page.id);
+      
+    setMessage({ 
+      type: "success", 
+      text: newValue ? "Gallery is now visible" : "Gallery is now hidden" 
     });
   };
 
@@ -1463,26 +1505,44 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Photo Gallery</h2>
-                    <div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        id="photo-upload"
-                      />
-                      <label
-                        htmlFor="photo-upload"
-                        className={`bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all cursor-pointer inline-block ${
-                          uploadingPhoto ? "opacity-50 cursor-not-allowed" : ""
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleToggleGalleryVisibility}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          showGallerySection
+                            ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                            : "bg-red-500/20 text-red-300 border border-red-500/30"
                         }`}
                       >
-                        {uploadingPhoto ? "Uploading..." : "+ Add Photo"}
-                      </label>
+                        {showGallerySection ? "👁️ Visible" : "🚫 Hidden"}
+                      </button>
+                      <div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          id="photo-upload"
+                        />
+                        <label
+                          htmlFor="photo-upload"
+                          className={`bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all cursor-pointer inline-block ${
+                            uploadingPhoto ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                        >
+                          {uploadingPhoto ? "Uploading..." : "+ Add Photo"}
+                        </label>
+                      </div>
                     </div>
                   </div>
+
+                  {!showGallerySection && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-amber-200 text-sm">
+                      ⚠️ Gallery is currently hidden from your public page. Click the button above to make it visible.
+                    </div>
+                  )}
                   
                   {galleryItems.length === 0 ? (
                     <div className="text-center py-12 text-rose-100/70">
@@ -1567,15 +1627,33 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Your Story Timeline</h2>
-                    {!showTimelineForm && (
-                      <button 
-                        onClick={() => setShowTimelineForm(true)}
-                        className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all"
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleToggleTimelineVisibility}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          showTimelineSection
+                            ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                            : "bg-red-500/20 text-red-300 border border-red-500/30"
+                        }`}
                       >
-                        + Add Memory
+                        {showTimelineSection ? "👁️ Visible" : "🚫 Hidden"}
                       </button>
-                    )}
+                      {!showTimelineForm && (
+                        <button 
+                          onClick={() => setShowTimelineForm(true)}
+                          className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all"
+                        >
+                          + Add Memory
+                        </button>
+                      )}
+                    </div>
                   </div>
+
+                  {!showTimelineSection && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-amber-200 text-sm">
+                      ⚠️ Timeline is currently hidden from your public page. Click the button above to make it visible.
+                    </div>
+                  )}
 
                   {/* Add/Edit Form */}
                   {showTimelineForm && (
@@ -2281,7 +2359,24 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Love Coupons</h2>
+                    <button
+                      onClick={handleToggleCouponsVisibility}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                        showCouponsSection
+                          ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                          : "bg-red-500/20 text-red-300 border border-red-500/30"
+                      }`}
+                    >
+                      {showCouponsSection ? "👁️ Visible" : "🚫 Hidden"}
+                    </button>
                   </div>
+
+                  {!showCouponsSection && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-amber-200 text-sm">
+                      ⚠️ Coupons are currently hidden from your public page. Click the button above to make them visible.
+                    </div>
+                  )}
+
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                     <p className="text-rose-100/70 text-center py-8">
                       <span className="text-4xl block mb-4">🎟️</span>
@@ -2588,114 +2683,172 @@ export default function DashboardPage() {
                   </div>
                   
                   {/* Phone Screen */}
-                  <div className="bg-rose-600 rounded-[2rem] overflow-hidden h-[580px] relative overflow-y-auto">
-                    {/* Mini floating hearts */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                      {[...Array(8)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute text-white/10 animate-float"
-                          style={{
-                            left: `${10 + (i * 12) % 80}%`,
-                            top: `${10 + (i * 15) % 80}%`,
-                            fontSize: '14px',
-                            animationDelay: `${i * 0.5}s`,
-                          }}
-                        >
-                          💕
-                        </div>
-                      ))}
+                  <div className="bg-rose-600 rounded-[2rem] overflow-hidden h-[580px] relative overflow-y-auto scrollbar-hide">
+                    {/* Header */}
+                    <div className="sticky top-0 z-20 bg-rose-600/90 backdrop-blur-sm px-4 py-2 flex justify-between items-center">
+                      <span className="text-white/90 text-[10px] font-medium">For {recipientName || "my luv"} 💕</span>
+                      <div className="flex gap-2 text-[8px] text-white/70">
+                        <span>Memories</span>
+                        <span>Dreams</span>
+                        <span>Gifts</span>
+                      </div>
                     </div>
                     
                     {/* Preview Content */}
-                    <div className="relative z-10 p-4 text-center">
-                      {/* Hero Section */}
-                      <div className="pt-6 pb-4">
-                        <p className="text-rose-200 text-[10px] mb-1">💕 For {recipientName || "My Love"} 💕</p>
-                        <h1 className="text-xl font-bold text-white font-dancing mb-1">
-                          {heroTitle || "To My Everything"}
+                    <div className="relative z-10 p-4">
+                      {/* Hero Badge */}
+                      <div className="flex justify-center mb-2">
+                        <span className="bg-white/20 backdrop-blur px-2 py-0.5 rounded-full text-white text-[8px]">
+                          ✨ Made with love for {recipientName || "my luv"}
+                        </span>
+                      </div>
+                      
+                      {/* Hero Title */}
+                      <div className="text-center mb-4">
+                        <h1 className="text-2xl font-bold text-white font-dancing leading-tight">
+                          {heroTitle || "fat ass bitch"}
                         </h1>
-                        <p className="text-rose-100 text-[10px] px-2">
+                        <p className="text-rose-100/80 text-[9px] mt-1 px-4">
                           {heroSubtitle || "A little corner of the internet, just for you"}
                         </p>
                       </div>
-                      
-                      {/* Days Counter */}
-                      {startDate && (
-                        <div className="bg-white/10 backdrop-blur rounded-xl p-3 mb-4">
-                          <p className="text-2xl font-bold text-white">{calculateDays()}</p>
-                          <p className="text-rose-100 text-[10px]">Days Together</p>
+
+                      {/* Love Letters / Poems Section */}
+                      {showPoemsSection && poems.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-white/80 text-[10px] font-medium text-center mb-2">💕 Love Letters</p>
+                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 shadow-lg">
+                            <div className="flex gap-2">
+                              <div className="w-12 h-16 bg-amber-100 rounded border-l-2 border-amber-300 flex items-center justify-center text-[8px] text-amber-600">
+                                📖
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-amber-800 font-dancing text-sm font-bold">{poems[0]?.title || "tight pussy gal"}</p>
+                                <p className="text-amber-700/70 text-[7px] mt-0.5 line-clamp-3">{poems[0]?.content?.slice(0, 80) || "In a world where beauty meets..."}</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
-                      
-                      {/* Bento Grid Preview */}
+
+                      {/* Bento Grid */}
                       <div className="grid grid-cols-2 gap-2 mb-4">
-                        {/* Gallery Card - Show actual photos */}
-                        <div className="bg-white/90 backdrop-blur rounded-xl p-2 text-left col-span-2">
-                          <p className="text-[10px] text-rose-600 font-medium mb-2">📸 Gallery ({galleryItems.length})</p>
-                          {galleryItems.length > 0 ? (
-                            <div className="grid grid-cols-3 gap-1">
-                              {galleryItems.slice(0, 6).map((item) => (
-                                <div key={item.id} className="aspect-square relative rounded overflow-hidden">
-                                  <Image
-                                    src={item.src}
-                                    alt=""
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
-                              ))}
+                        {/* Counter Card */}
+                        <div className="bg-white/90 backdrop-blur rounded-xl p-3">
+                          <p className="text-rose-400 text-[8px] mb-0.5">💕 SINCE WE MET</p>
+                          <p className="text-rose-900 font-bold text-lg">Loving you for</p>
+                          <div className="flex gap-2 mt-1">
+                            <div className="text-center">
+                              <p className="text-rose-600 font-bold text-lg">{calculateDays()}</p>
+                              <p className="text-rose-400 text-[7px]">DAYS</p>
                             </div>
-                          ) : (
-                            <p className="text-[8px] text-gray-600">No photos yet</p>
-                          )}
+                          </div>
                         </div>
                         
                         {/* Music Card */}
-                        <div className="bg-white/90 backdrop-blur rounded-xl p-3 text-left">
-                          <p className="text-[10px] text-rose-600 font-medium mb-1">🎵 Our Song</p>
-                          <p className="text-[8px] text-gray-600">Playing now...</p>
+                        <div className="bg-rose-900/80 backdrop-blur rounded-xl p-3 flex flex-col items-center justify-center">
+                          <div className="w-8 h-8 bg-black rounded-full mb-1" />
+                          <p className="text-rose-200 text-[8px]">🎵 Our Song</p>
+                          <p className="text-white text-[7px]">In My Life</p>
                         </div>
                         
                         {/* Reasons Card */}
-                        <div className="bg-white/90 backdrop-blur rounded-xl p-3 text-left">
-                          <p className="text-[10px] text-rose-600 font-medium mb-1">💕 Reasons</p>
-                          <p className="text-[8px] text-gray-600">Why I love you</p>
+                        <div className="bg-white/90 backdrop-blur rounded-xl p-3 text-center">
+                          <div className="w-6 h-6 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-1">
+                            <span className="text-[10px]">✨</span>
+                          </div>
+                          <p className="text-rose-900 font-medium text-[10px]">{reasonCardTitle || "Why I Love You"}</p>
+                          <p className="text-rose-400 text-[7px]">{reasonCardSubtitle || "Tap to reveal a reason"}</p>
+                          <button className="bg-rose-600 text-white text-[7px] px-2 py-1 rounded-full mt-1">{reasonCardButton || "Tell Me Why"}</button>
                         </div>
                         
                         {/* Valentine Card */}
-                        <div className="bg-white/90 backdrop-blur rounded-xl p-3 text-center col-span-2">
-                          <p className="text-[10px] text-rose-600 font-medium mb-2">Will you be my Valentine?</p>
-                          <div className="flex gap-2 justify-center">
-                            <span className="bg-rose-600 text-white text-[8px] px-3 py-1 rounded-full">Yes! 💕</span>
-                            <span className="bg-white border border-rose-200 text-rose-600 text-[8px] px-3 py-1 rounded-full">No</span>
+                        <div className="bg-gradient-to-br from-rose-50 to-white rounded-xl p-3">
+                          <span className="bg-rose-100 text-rose-600 text-[6px] px-1.5 py-0.5 rounded-full">{valentineCardLabel || "IMPORTANT"}</span>
+                          <p className="text-rose-900 font-medium text-[10px] mt-1">{valentineCardQuestion?.split('\n')[0] || "Will you be my"}</p>
+                          <p className="text-rose-900 font-medium text-[10px]">{valentineCardQuestion?.split('\n')[1] || "Valentine?"}</p>
+                          <div className="flex gap-1 mt-1">
+                            <span className="bg-rose-900 text-white text-[6px] px-2 py-0.5 rounded-full">{valentineCardYesText || "Yes, Always"} 💕</span>
+                            <span className="bg-white border border-rose-200 text-rose-900 text-[6px] px-2 py-0.5 rounded-full">{valentineCardNoText || "No"}</span>
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Timeline Preview */}
-                      <div className="bg-white/90 backdrop-blur rounded-xl p-3 mb-4 text-left">
-                        <p className="text-[10px] text-rose-600 font-medium mb-2">📅 Our Timeline</p>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-rose-500 rounded-full" />
-                            <p className="text-[8px] text-gray-600">First met</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-rose-400 rounded-full" />
-                            <p className="text-[8px] text-gray-600">First date</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-rose-300 rounded-full" />
-                            <p className="text-[8px] text-gray-600">Said &quot;I love you&quot;</p>
+                      {showTimelineSection && timelineItems.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-white font-medium text-center mb-2">Our Story</p>
+                          <p className="text-rose-200/70 text-[8px] text-center mb-2">HOW IT ALL BEGAN</p>
+                          <div className="bg-rose-700/50 rounded-xl p-3">
+                            {timelineItems.slice(0, 1).map((item) => (
+                              <div key={item.id} className="flex gap-2 items-start">
+                                <div className="flex-1">
+                                  <p className="text-rose-200 text-[8px]">{item.label}</p>
+                                  <p className="text-white text-[10px] font-medium">{item.title}</p>
+                                  <p className="text-rose-100/70 text-[7px]">{item.description?.slice(0, 50)}</p>
+                                </div>
+                                {item.image_src && (
+                                  <div className="w-12 h-12 rounded-lg overflow-hidden">
+                                    <Image src={item.image_src} alt="" width={48} height={48} className="object-cover w-full h-full" />
+                                  </div>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                      
+                      )}
+
+                      {/* Bucket List Preview */}
+                      {showBucketListSection && bucketList.length > 0 && (
+                        <div className="bg-rose-700/50 rounded-xl p-3 mb-4">
+                          <p className="text-white text-[10px] font-medium mb-2">✨ Our Bucket List</p>
+                          {bucketList.slice(0, 2).map((item: { id: string; text: string; completed: boolean }) => (
+                            <div key={item.id} className="flex items-center gap-2 text-[8px] text-white/80">
+                              <span>{item.completed ? "✅" : "⬜"}</span>
+                              <span>{item.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Love Coupons Preview */}
+                      {showCouponsSection && (
+                        <div className="mb-4">
+                          <p className="text-white font-medium text-center mb-1">Love Coupons</p>
+                          <p className="text-rose-200/70 text-[8px] text-center mb-2">Redeemable whenever you want</p>
+                          <div className="flex gap-2 overflow-x-auto pb-2">
+                            {["Back Massage", "Dinner Date", "Forgiveness"].map((coupon, i) => (
+                              <div key={i} className="flex-shrink-0 w-20 bg-gradient-to-br from-rose-100 to-rose-200 rounded-lg p-2 text-center">
+                                <p className="text-rose-600 text-[7px]">COUPON</p>
+                                <p className="text-rose-900 font-medium text-[8px]">{coupon}</p>
+                                <button className="bg-rose-600 text-white text-[6px] px-2 py-0.5 rounded mt-1">Redeem</button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gallery Preview */}
+                      {showGallerySection && galleryItems.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-white font-medium text-center mb-1">Our Moments</p>
+                          <p className="text-rose-200/70 text-[8px] text-center mb-2">SWIPE THROUGH OUR MEMORIES</p>
+                          <div className="aspect-square relative rounded-xl overflow-hidden max-w-[180px] mx-auto">
+                            <Image src={galleryItems[0]?.src || ""} alt="" fill className="object-cover" />
+                          </div>
+                          <div className="flex justify-center gap-1 mt-2">
+                            <div className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white text-[8px]">←</div>
+                            <div className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white text-[8px]">💕</div>
+                            <div className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white text-[8px]">→</div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Footer */}
-                      <div className="pt-2 pb-4">
-                        <p className="text-rose-200/70 text-[9px]">
-                          Made with 💕 by {senderName || "Your Valentine"}
+                      <div className="text-center pt-4 pb-8">
+                        <p className="text-white font-dancing text-lg">Forever & Always</p>
+                        <p className="text-rose-200/70 text-[8px]">
+                          {senderName || "ME TRU"} 💕 {recipientName || "YOUR SECRET ADMIRER"}
                         </p>
                       </div>
                     </div>
@@ -2721,90 +2874,138 @@ export default function DashboardPage() {
                   </div>
                   
                   {/* Browser Content */}
-                  <div className="bg-rose-600 rounded-b-lg overflow-hidden h-[400px] relative overflow-y-auto">
-                    {/* Floating hearts */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                      {[...Array(10)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute text-white/10 animate-float"
-                          style={{
-                            left: `${5 + (i * 10) % 90}%`,
-                            top: `${5 + (i * 12) % 90}%`,
-                            fontSize: '12px',
-                            animationDelay: `${i * 0.3}s`,
-                          }}
-                        >
-                          💕
-                        </div>
-                      ))}
+                  <div className="bg-rose-600 rounded-b-lg overflow-hidden h-[450px] relative overflow-y-auto scrollbar-hide">
+                    {/* Header */}
+                    <div className="sticky top-0 z-20 bg-rose-600/90 backdrop-blur-sm px-4 py-2 flex justify-between items-center">
+                      <span className="text-white/90 text-[9px] font-medium">For {recipientName || "my luv"} 💕</span>
+                      <div className="flex gap-3 text-[8px] text-white/70">
+                        <span>Memories</span>
+                        <span>Dreams</span>
+                        <span>Gifts</span>
+                        <span>Gallery</span>
+                      </div>
                     </div>
                     
                     {/* Content */}
-                    <div className="relative z-10 p-4">
+                    <div className="relative z-10 p-4 max-w-[400px] mx-auto">
+                      {/* Hero Badge */}
+                      <div className="flex justify-center mb-2">
+                        <span className="bg-white/20 backdrop-blur px-2 py-0.5 rounded-full text-white text-[7px]">
+                          ✨ Made with love for {recipientName || "my luv"}
+                        </span>
+                      </div>
+                      
                       {/* Hero */}
-                      <div className="text-center py-4">
-                        <p className="text-rose-200 text-[9px] mb-1">💕 For {recipientName || "My Love"} 💕</p>
-                        <h1 className="text-lg font-bold text-white font-dancing mb-1">
-                          {heroTitle || "To My Everything"}
+                      <div className="text-center mb-4">
+                        <h1 className="text-xl font-bold text-white font-dancing">
+                          {heroTitle || "fat ass bitch"}
                         </h1>
-                        <p className="text-rose-100 text-[9px]">
+                        <p className="text-rose-100/80 text-[8px] mt-1">
                           {heroSubtitle || "A little corner of the internet, just for you"}
                         </p>
                       </div>
-                      
-                      {/* Days Counter */}
-                      {startDate && (
-                        <div className="bg-white/10 backdrop-blur rounded-xl p-3 mb-3 text-center max-w-[200px] mx-auto">
-                          <p className="text-xl font-bold text-white">{calculateDays()}</p>
-                          <p className="text-rose-100 text-[9px]">Days Together</p>
+
+                      {/* Poems Preview */}
+                      {showPoemsSection && poems.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-white/80 text-[9px] font-medium text-center mb-1">💕 Love Letters</p>
+                          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-2 shadow">
+                            <div className="flex gap-2">
+                              <div className="w-10 h-14 bg-amber-100 rounded border-l-2 border-amber-300 flex items-center justify-center text-[7px]">📖</div>
+                              <div className="flex-1">
+                                <p className="text-amber-800 font-dancing text-xs font-bold">{poems[0]?.title || "tight pussy gal"}</p>
+                                <p className="text-amber-700/70 text-[6px] mt-0.5 line-clamp-2">{poems[0]?.content?.slice(0, 60)}</p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       )}
-                      
+
                       {/* Desktop Bento Grid */}
-                      <div className="grid grid-cols-3 gap-2 max-w-[350px] mx-auto">
-                        {/* Gallery with photos */}
-                        <div className="bg-white/90 rounded-lg p-2 col-span-3">
-                          <p className="text-[8px] text-rose-600 font-medium mb-1">📸 Gallery ({galleryItems.length})</p>
-                          {galleryItems.length > 0 ? (
-                            <div className="grid grid-cols-4 gap-1">
-                              {galleryItems.slice(0, 4).map((item) => (
-                                <div key={item.id} className="aspect-square relative rounded overflow-hidden">
-                                  <Image
-                                    src={item.src}
-                                    alt=""
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-[7px] text-gray-500">No photos uploaded</p>
-                          )}
+                      <div className="grid grid-cols-6 gap-1.5 mb-3">
+                        {/* Counter */}
+                        <div className="col-span-3 bg-white/90 rounded-lg p-2">
+                          <p className="text-rose-400 text-[6px]">💕 SINCE WE MET</p>
+                          <p className="text-rose-900 font-bold text-xs">Loving you for</p>
+                          <p className="text-rose-600 font-bold text-sm">{calculateDays()} <span className="text-[7px] text-rose-400">DAYS</span></p>
                         </div>
-                        <div className="bg-white/90 rounded-lg p-2">
-                          <p className="text-[8px] text-rose-600 font-medium">🎵 Music</p>
+                        {/* Music */}
+                        <div className="col-span-3 bg-rose-900/80 rounded-lg p-2 flex items-center gap-2">
+                          <div className="w-7 h-7 bg-black rounded-full flex-shrink-0" />
+                          <div>
+                            <p className="text-rose-200 text-[7px]">🎵 Our Song</p>
+                            <p className="text-white text-[8px] font-medium">In My Life</p>
+                          </div>
                         </div>
-                        <div className="bg-white/90 rounded-lg p-2">
-                          <p className="text-[8px] text-rose-600 font-medium">💕 Reasons</p>
+                        {/* Reasons */}
+                        <div className="col-span-3 bg-white/90 rounded-lg p-2 text-center">
+                          <p className="text-rose-900 font-medium text-[8px]">{reasonCardTitle || "Why I Love You"}</p>
+                          <p className="text-rose-400 text-[6px]">{reasonCardSubtitle || "Tap to reveal"}</p>
+                          <button className="bg-rose-600 text-white text-[6px] px-2 py-0.5 rounded-full mt-1">{reasonCardButton || "Tell Me Why"}</button>
                         </div>
-                        <div className="bg-white/90 rounded-lg p-2">
-                          <p className="text-[8px] text-rose-600 font-medium">💌 Poems</p>
-                        </div>
-                        <div className="bg-white/90 rounded-lg p-2 col-span-3 text-center">
-                          <p className="text-[8px] text-rose-600 font-medium mb-1">Will you be my Valentine?</p>
-                          <div className="flex gap-1 justify-center">
-                            <span className="bg-rose-600 text-white text-[7px] px-2 py-0.5 rounded-full">Yes!</span>
-                            <span className="bg-white border border-rose-200 text-rose-600 text-[7px] px-2 py-0.5 rounded-full">No</span>
+                        {/* Valentine */}
+                        <div className="col-span-3 bg-gradient-to-br from-rose-50 to-white rounded-lg p-2">
+                          <span className="bg-rose-100 text-rose-600 text-[5px] px-1 py-0.5 rounded-full">{valentineCardLabel || "IMPORTANT"}</span>
+                          <p className="text-rose-900 font-medium text-[8px] mt-0.5">{valentineCardQuestion?.replace('\n', ' ') || "Will you be my Valentine?"}</p>
+                          <div className="flex gap-1 mt-1">
+                            <span className="bg-rose-900 text-white text-[5px] px-1.5 py-0.5 rounded-full">{valentineCardYesText || "Yes"} 💕</span>
+                            <span className="bg-white border border-rose-200 text-rose-900 text-[5px] px-1.5 py-0.5 rounded-full">{valentineCardNoText || "No"}</span>
                           </div>
                         </div>
                       </div>
-                      
+
+                      {/* Timeline */}
+                      {showTimelineSection && timelineItems.length > 0 && (
+                        <div className="bg-rose-700/50 rounded-lg p-2 mb-3">
+                          <p className="text-white text-[9px] font-medium text-center mb-1">Our Story</p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <p className="text-rose-200 text-[7px]">{timelineItems[0]?.label}</p>
+                              <p className="text-white text-[8px] font-medium">{timelineItems[0]?.title}</p>
+                            </div>
+                            {timelineItems[0]?.image_src && (
+                              <div className="w-10 h-10 rounded overflow-hidden">
+                                <Image src={timelineItems[0].image_src} alt="" width={40} height={40} className="object-cover" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bucket List */}
+                      {showBucketListSection && bucketList.length > 0 && (
+                        <div className="bg-rose-700/50 rounded-lg p-2 mb-3">
+                          <p className="text-white text-[9px] font-medium mb-1">✨ Our Bucket List</p>
+                          <div className="space-y-0.5">
+                            {bucketList.slice(0, 2).map((item: { id: string; text: string; completed: boolean }) => (
+                              <div key={item.id} className="flex items-center gap-1 text-[7px] text-white/80">
+                                <span>{item.completed ? "✅" : "⬜"}</span>
+                                <span>{item.text}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gallery */}
+                      {showGallerySection && galleryItems.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-white text-[9px] font-medium text-center mb-1">Our Moments</p>
+                          <div className="grid grid-cols-3 gap-1">
+                            {galleryItems.slice(0, 3).map((item) => (
+                              <div key={item.id} className="aspect-square relative rounded overflow-hidden">
+                                <Image src={item.src} alt="" fill className="object-cover" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Footer */}
-                      <div className="text-center pt-4">
-                        <p className="text-rose-200/70 text-[8px]">
-                          Made with 💕 by {senderName || "Your Valentine"}
+                      <div className="text-center pt-2 pb-4">
+                        <p className="text-white font-dancing text-sm">Forever & Always</p>
+                        <p className="text-rose-200/70 text-[7px]">
+                          {senderName || "ME TRU"} 💕 {recipientName || "YOUR SECRET ADMIRER"}
                         </p>
                       </div>
                     </div>

@@ -40,6 +40,8 @@ interface ValentinePageProps {
   showOpenWhen?: boolean;
   showCoupons?: boolean;
   showPoems?: boolean;
+  showTimeline?: boolean;
+  showGallery?: boolean;
   reasonCardSettings?: ReasonCardSettings;
   valentineCardSettings?: ValentineCardSettings;
   celebrationSettings?: CelebrationModalSettings;
@@ -65,6 +67,8 @@ export default function ValentinePage({
   showOpenWhen = true,
   showCoupons = true,
   showPoems = true,
+  showTimeline = true,
+  showGallery = true,
   reasonCardSettings,
   valentineCardSettings,
   celebrationSettings,
@@ -123,11 +127,11 @@ export default function ValentinePage({
           reasonCardSettings={reasonCardSettings}
           valentineCardSettings={valentineCardSettings}
         />
-        <Timeline items={timelineItems} />
+        {showTimeline && <Timeline items={timelineItems} />}
         {showOpenWhen && <OpenWhenNotes notes={openWhenNotes} onOpenNote={handleOpenNote} />}
         {showBucketList && <BucketList items={bucketList} />}
         {showCoupons && <LoveCoupons coupons={coupons} />}
-        <Gallery items={galleryItems} />
+        {showGallery && <Gallery items={galleryItems} />}
       </main>
 
       <Footer senderName={senderName} recipientName={recipientName} />

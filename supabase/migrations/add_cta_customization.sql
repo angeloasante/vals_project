@@ -1,9 +1,15 @@
--- Migration: Add CTA customization columns and show_poems visibility
+-- Migration: Add CTA customization columns and visibility controls
 -- Run this in Supabase SQL Editor
 
--- Add poems visibility
+-- Add visibility controls (poems already added, add timeline and gallery)
 ALTER TABLE public.valentine_pages 
 ADD COLUMN IF NOT EXISTS show_poems BOOLEAN DEFAULT true;
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS show_timeline BOOLEAN DEFAULT true;
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS show_gallery BOOLEAN DEFAULT true;
 
 -- Add reason card customization
 ALTER TABLE public.valentine_pages 

@@ -35,6 +35,8 @@ interface PageData {
   showOpenWhen: boolean;
   showCoupons: boolean;
   showPoems: boolean;
+  showTimeline: boolean;
+  showGallery: boolean;
   reasonCardSettings: ReasonCardSettings;
   valentineCardSettings: ValentineCardSettings;
   celebrationSettings: CelebrationModalSettings;
@@ -196,6 +198,8 @@ export default function UserPage() {
         showOpenWhen: page.show_open_when !== false,
         showCoupons: page.show_coupons !== false,
         showPoems: page.show_poems !== false,
+        showTimeline: page.show_timeline !== false,
+        showGallery: page.show_gallery !== false,
         // CTA Card settings
         reasonCardSettings: {
           title: page.reason_card_title || "Why I Love You",
@@ -288,6 +292,8 @@ export default function UserPage() {
       showOpenWhen={pageData.showOpenWhen}
       showCoupons={pageData.showCoupons}
       showPoems={pageData.showPoems}
+      showTimeline={pageData.showTimeline}
+      showGallery={pageData.showGallery}
       reasonCardSettings={pageData.reasonCardSettings}
       valentineCardSettings={pageData.valentineCardSettings}
       celebrationSettings={pageData.celebrationSettings}
