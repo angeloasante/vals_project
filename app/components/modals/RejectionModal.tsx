@@ -2,11 +2,19 @@
 
 import Icon from "../ui/Icon";
 
+export interface RejectionModalSettings {
+  title?: string;
+  message?: string;
+  acceptButton?: string;
+  rejectButton?: string;
+}
+
 interface RejectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAccept: () => void;
   onStillNo: () => void;
+  settings?: RejectionModalSettings;
 }
 
 export default function RejectionModal({
@@ -14,8 +22,14 @@ export default function RejectionModal({
   onClose,
   onAccept,
   onStillNo,
+  settings,
 }: RejectionModalProps) {
   if (!isOpen) return null;
+
+  const title = settings?.title || "Are you sure?";
+  const message = settings?.message || "My heart might break into a million pieces...";
+  const acceptButton = settings?.acceptButton || "Yes, I'll be yours";
+  const rejectButton = settings?.rejectButton || "Still No";
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center transition-opacity duration-500">
@@ -23,9 +37,9 @@ export default function RejectionModal({
         <div className="w-16 h-16 bg-zinc-100 text-zinc-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <Icon name="solar:sad-circle-bold" width={32} />
         </div>
-        <h2 className="text-xl font-bold text-zinc-900 mb-2">Are you sure?</h2>
+        <h2 className="text-xl font-bold text-zinc-900 mb-2">{title}</h2>
         <p className="text-zinc-500 mb-6 text-sm">
-          My heart might break into a million pieces...
+          {message}
         </p>
         <div className="flex gap-3 justify-center">
           <button
@@ -35,13 +49,13 @@ export default function RejectionModal({
             }}
             className="flex-1 bg-rose-600 text-white py-3 rounded-xl font-medium hover:bg-rose-700"
           >
-            Yes, I&apos;ll be yours
+            {acceptButton}
           </button>
           <button
             onClick={onStillNo}
             className="flex-1 bg-zinc-100 text-zinc-600 py-3 rounded-xl font-medium hover:bg-zinc-200"
           >
-            Still No
+            {rejectButton}
           </button>
         </div>
       </div>

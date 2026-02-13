@@ -24,6 +24,28 @@ interface ValentinePage {
   show_bucket_list: boolean;
   show_open_when: boolean;
   show_coupons: boolean;
+  show_poems: boolean;
+  // CTA Card customization
+  reason_card_title: string;
+  reason_card_subtitle: string;
+  reason_card_button: string;
+  reason_card_another_button: string;
+  valentine_card_label: string;
+  valentine_card_question: string;
+  valentine_card_yes_text: string;
+  valentine_card_no_text: string;
+  // Popup/Modal customization
+  celebration_title: string;
+  celebration_message: string;
+  celebration_button: string;
+  rejection_title: string;
+  rejection_message: string;
+  rejection_accept_button: string;
+  rejection_reject_button: string;
+  second_rejection_title: string;
+  second_rejection_message: string;
+  second_rejection_accept_button: string;
+  second_rejection_reject_button: string;
 }
 
 interface GalleryItem {
@@ -166,6 +188,30 @@ export default function DashboardPage() {
   const [showBucketListSection, setShowBucketListSection] = useState(true);
   const [showOpenWhenSection, setShowOpenWhenSection] = useState(true);
   const [showCouponsSection, setShowCouponsSection] = useState(true);
+  const [showPoemsSection, setShowPoemsSection] = useState(true);
+
+  // CTA Card customization
+  const [reasonCardTitle, setReasonCardTitle] = useState("Why I Love You");
+  const [reasonCardSubtitle, setReasonCardSubtitle] = useState("Tap to reveal a reason");
+  const [reasonCardButton, setReasonCardButton] = useState("Tell Me Why");
+  const [reasonCardAnotherButton, setReasonCardAnotherButton] = useState("Another One");
+  const [valentineCardLabel, setValentineCardLabel] = useState("Important");
+  const [valentineCardQuestion, setValentineCardQuestion] = useState("Will you be my\nValentine?");
+  const [valentineCardYesText, setValentineCardYesText] = useState("Yes, Always");
+  const [valentineCardNoText, setValentineCardNoText] = useState("No");
+
+  // Popup/Modal customization
+  const [celebrationTitle, setCelebrationTitle] = useState("Yay! ❤️");
+  const [celebrationMessage, setCelebrationMessage] = useState("You just made me the happiest person alive. I love you so much!");
+  const [celebrationButton, setCelebrationButton] = useState("Can't wait!");
+  const [rejectionTitle, setRejectionTitle] = useState("Are you sure?");
+  const [rejectionMessage, setRejectionMessage] = useState("My heart might break into a million pieces...");
+  const [rejectionAcceptButton, setRejectionAcceptButton] = useState("Yes, I'll be yours");
+  const [rejectionRejectButton, setRejectionRejectButton] = useState("Still No");
+  const [secondRejectionTitle, setSecondRejectionTitle] = useState("Last Chance!");
+  const [secondRejectionMessage, setSecondRejectionMessage] = useState("I'll make you the happiest person, I promise!");
+  const [secondRejectionAcceptButton, setSecondRejectionAcceptButton] = useState("Okay, Yes! ❤️");
+  const [secondRejectionRejectButton, setSecondRejectionRejectButton] = useState("No 😤");
 
   const router = useRouter();
   const supabase = createClient();
@@ -222,6 +268,28 @@ export default function DashboardPage() {
       setShowBucketListSection(pageData.show_bucket_list !== false);
       setShowOpenWhenSection(pageData.show_open_when !== false);
       setShowCouponsSection(pageData.show_coupons !== false);
+      setShowPoemsSection(pageData.show_poems !== false);
+      // CTA Card settings
+      setReasonCardTitle(pageData.reason_card_title || "Why I Love You");
+      setReasonCardSubtitle(pageData.reason_card_subtitle || "Tap to reveal a reason");
+      setReasonCardButton(pageData.reason_card_button || "Tell Me Why");
+      setReasonCardAnotherButton(pageData.reason_card_another_button || "Another One");
+      setValentineCardLabel(pageData.valentine_card_label || "Important");
+      setValentineCardQuestion(pageData.valentine_card_question || "Will you be my\nValentine?");
+      setValentineCardYesText(pageData.valentine_card_yes_text || "Yes, Always");
+      setValentineCardNoText(pageData.valentine_card_no_text || "No");
+      // Popup/Modal settings
+      setCelebrationTitle(pageData.celebration_title || "Yay! ❤️");
+      setCelebrationMessage(pageData.celebration_message || "You just made me the happiest person alive. I love you so much!");
+      setCelebrationButton(pageData.celebration_button || "Can't wait!");
+      setRejectionTitle(pageData.rejection_title || "Are you sure?");
+      setRejectionMessage(pageData.rejection_message || "My heart might break into a million pieces...");
+      setRejectionAcceptButton(pageData.rejection_accept_button || "Yes, I'll be yours");
+      setRejectionRejectButton(pageData.rejection_reject_button || "Still No");
+      setSecondRejectionTitle(pageData.second_rejection_title || "Last Chance!");
+      setSecondRejectionMessage(pageData.second_rejection_message || "I'll make you the happiest person, I promise!");
+      setSecondRejectionAcceptButton(pageData.second_rejection_accept_button || "Okay, Yes! ❤️");
+      setSecondRejectionRejectButton(pageData.second_rejection_reject_button || "No 😤");
 
       // Load gallery items
       const { data: galleryData } = await supabase
@@ -311,6 +379,28 @@ export default function DashboardPage() {
         show_bucket_list: showBucketListSection,
         show_open_when: showOpenWhenSection,
         show_coupons: showCouponsSection,
+        show_poems: showPoemsSection,
+        // CTA Card settings
+        reason_card_title: reasonCardTitle,
+        reason_card_subtitle: reasonCardSubtitle,
+        reason_card_button: reasonCardButton,
+        reason_card_another_button: reasonCardAnotherButton,
+        valentine_card_label: valentineCardLabel,
+        valentine_card_question: valentineCardQuestion,
+        valentine_card_yes_text: valentineCardYesText,
+        valentine_card_no_text: valentineCardNoText,
+        // Popup/Modal settings
+        celebration_title: celebrationTitle,
+        celebration_message: celebrationMessage,
+        celebration_button: celebrationButton,
+        rejection_title: rejectionTitle,
+        rejection_message: rejectionMessage,
+        rejection_accept_button: rejectionAcceptButton,
+        rejection_reject_button: rejectionRejectButton,
+        second_rejection_title: secondRejectionTitle,
+        second_rejection_message: secondRejectionMessage,
+        second_rejection_accept_button: secondRejectionAcceptButton,
+        second_rejection_reject_button: secondRejectionRejectButton,
       })
       .eq("id", page.id);
 
@@ -389,6 +479,23 @@ export default function DashboardPage() {
     setMessage({ 
       type: "success", 
       text: newValue ? "Coupons are now visible" : "Coupons are now hidden" 
+    });
+  };
+
+  const handleTogglePoemsVisibility = async () => {
+    if (!page?.id) return;
+    
+    const newValue = !showPoemsSection;
+    setShowPoemsSection(newValue);
+    
+    await supabase
+      .from("valentine_pages")
+      .update({ show_poems: newValue })
+      .eq("id", page.id);
+      
+    setMessage({ 
+      type: "success", 
+      text: newValue ? "Poems are now visible" : "Poems are now hidden" 
     });
   };
 
@@ -1256,6 +1363,7 @@ export default function DashboardPage() {
                 { id: "bucketlist", label: "📝 Bucket List" },
                 { id: "openwhen", label: "💌 Open When" },
                 { id: "coupons", label: "🎟️ Coupons" },
+                { id: "ctacards", label: "💝 CTA Cards" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1721,6 +1829,17 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Love Poems (Book)</h2>
                     <div className="flex items-center gap-3">
+                      {/* Visibility Toggle */}
+                      <button
+                        onClick={handleTogglePoemsVisibility}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          showPoemsSection
+                            ? "bg-green-500/20 text-green-300 border border-green-400/30"
+                            : "bg-red-500/20 text-red-300 border border-red-400/30"
+                        }`}
+                      >
+                        {showPoemsSection ? "👁️ Visible" : "🚫 Hidden"}
+                      </button>
                       {!showPoemForm && (
                         <button 
                           onClick={() => setShowPoemForm(true)}
@@ -1731,6 +1850,12 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
+
+                  {!showPoemsSection && (
+                    <div className="bg-yellow-500/10 border border-yellow-400/30 rounded-xl p-3 text-yellow-200 text-sm">
+                      ⚠️ This section is hidden on your page. Toggle visibility above to show it.
+                    </div>
+                  )}
 
                   {/* Add/Edit Form */}
                   {showPoemForm && (
@@ -2167,6 +2292,258 @@ export default function DashboardPage() {
                       </span>
                     </p>
                   </div>
+                </div>
+              )}
+
+              {activeTab === "ctacards" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">CTA Cards Customization</h2>
+                  </div>
+                  <p className="text-rose-100/70 text-sm">
+                    Customize the text on the &quot;Why I Love You&quot; and &quot;Valentine Question&quot; cards.
+                  </p>
+
+                  {/* Reason Card Settings */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-4">
+                    <h3 className="text-white font-medium flex items-center gap-2">
+                      <span className="text-lg">💕</span> Why I Love You Card
+                    </h3>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Card Title</label>
+                      <input
+                        type="text"
+                        value={reasonCardTitle}
+                        onChange={(e) => setReasonCardTitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Why I Love You"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Subtitle</label>
+                      <input
+                        type="text"
+                        value={reasonCardSubtitle}
+                        onChange={(e) => setReasonCardSubtitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Tap to reveal a reason"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Button Text</label>
+                      <input
+                        type="text"
+                        value={reasonCardButton}
+                        onChange={(e) => setReasonCardButton(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Tell Me Why"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">&quot;Another&quot; Button Text (shown after reveal)</label>
+                      <input
+                        type="text"
+                        value={reasonCardAnotherButton}
+                        onChange={(e) => setReasonCardAnotherButton(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Another One"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Valentine Card Settings */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-4">
+                    <h3 className="text-white font-medium flex items-center gap-2">
+                      <span className="text-lg">💝</span> Valentine Question Card
+                    </h3>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Label Badge</label>
+                      <input
+                        type="text"
+                        value={valentineCardLabel}
+                        onChange={(e) => setValentineCardLabel(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Important"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Question (use \n for line break)</label>
+                      <textarea
+                        value={valentineCardQuestion}
+                        onChange={(e) => setValentineCardQuestion(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                        rows={2}
+                        placeholder="Will you be my&#10;Valentine?"
+                      />
+                      <p className="text-xs text-rose-100/50 mt-1">Tip: Press Enter for a line break</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Yes Button Text</label>
+                        <input
+                          type="text"
+                          value={valentineCardYesText}
+                          onChange={(e) => setValentineCardYesText(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="Yes, Always"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">No Button Text</label>
+                        <input
+                          type="text"
+                          value={valentineCardNoText}
+                          onChange={(e) => setValentineCardNoText(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="No"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Celebration Popup (Yes clicked) */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-4">
+                    <h3 className="text-white font-medium flex items-center gap-2">
+                      <span className="text-lg">🎉</span> Celebration Popup (When they say &quot;Yes&quot;)
+                    </h3>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={celebrationTitle}
+                        onChange={(e) => setCelebrationTitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Yay! ❤️"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Message</label>
+                      <textarea
+                        value={celebrationMessage}
+                        onChange={(e) => setCelebrationMessage(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                        rows={2}
+                        placeholder="You just made me the happiest person alive. I love you so much!"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Button Text</label>
+                      <input
+                        type="text"
+                        value={celebrationButton}
+                        onChange={(e) => setCelebrationButton(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Can't wait!"
+                      />
+                    </div>
+                  </div>
+
+                  {/* First Rejection Popup */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-4">
+                    <h3 className="text-white font-medium flex items-center gap-2">
+                      <span className="text-lg">😢</span> First &quot;No&quot; Popup
+                    </h3>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={rejectionTitle}
+                        onChange={(e) => setRejectionTitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Are you sure?"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Message</label>
+                      <textarea
+                        value={rejectionMessage}
+                        onChange={(e) => setRejectionMessage(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                        rows={2}
+                        placeholder="My heart might break into a million pieces..."
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Accept Button</label>
+                        <input
+                          type="text"
+                          value={rejectionAcceptButton}
+                          onChange={(e) => setRejectionAcceptButton(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="Yes, I'll be yours"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Reject Button</label>
+                        <input
+                          type="text"
+                          value={rejectionRejectButton}
+                          onChange={(e) => setRejectionRejectButton(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="Still No"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Second Rejection Popup (Last Chance) */}
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-4">
+                    <h3 className="text-white font-medium flex items-center gap-2">
+                      <span className="text-lg">💔</span> Final &quot;No&quot; Popup (Last Chance)
+                    </h3>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Title</label>
+                      <input
+                        type="text"
+                        value={secondRejectionTitle}
+                        onChange={(e) => setSecondRejectionTitle(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                        placeholder="Last Chance!"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-1">Message</label>
+                      <textarea
+                        value={secondRejectionMessage}
+                        onChange={(e) => setSecondRejectionMessage(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                        rows={2}
+                        placeholder="I'll make you the happiest person, I promise!"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Accept Button</label>
+                        <input
+                          type="text"
+                          value={secondRejectionAcceptButton}
+                          onChange={(e) => setSecondRejectionAcceptButton(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="Okay, Yes! ❤️"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Reject Button</label>
+                        <input
+                          type="text"
+                          value={secondRejectionRejectButton}
+                          onChange={(e) => setSecondRejectionRejectButton(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="No 😤"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <button
+                    onClick={handleSaveSettings}
+                    disabled={saving}
+                    className="w-full bg-white text-rose-600 px-4 py-3 rounded-xl font-medium hover:bg-rose-50 transition-all disabled:opacity-50"
+                  >
+                    {saving ? "Saving..." : "💾 Save CTA Card Settings"}
+                  </button>
                 </div>
               )}
             </div>

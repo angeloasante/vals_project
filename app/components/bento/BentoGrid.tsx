@@ -2,8 +2,8 @@
 
 import CounterCard from "./CounterCard";
 import MusicCard, { MusicSettingsData } from "./MusicCard";
-import ReasonCard, { ReasonItemData } from "./ReasonCard";
-import ValentineCard from "./ValentineCard";
+import ReasonCard, { ReasonItemData, ReasonCardSettings } from "./ReasonCard";
+import ValentineCard, { ValentineCardSettings } from "./ValentineCard";
 
 interface BentoGridProps {
   startDate: Date;
@@ -11,6 +11,8 @@ interface BentoGridProps {
   onRejectValentine: () => void;
   reasons?: ReasonItemData[];
   musicSettings?: MusicSettingsData;
+  reasonCardSettings?: ReasonCardSettings;
+  valentineCardSettings?: ValentineCardSettings;
 }
 
 export default function BentoGrid({
@@ -19,13 +21,15 @@ export default function BentoGrid({
   onRejectValentine,
   reasons,
   musicSettings,
+  reasonCardSettings,
+  valentineCardSettings,
 }: BentoGridProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-32">
       <CounterCard startDate={startDate} />
       <MusicCard settings={musicSettings} />
-      <ReasonCard reasons={reasons} />
-      <ValentineCard onAccept={onAcceptValentine} onReject={onRejectValentine} />
+      <ReasonCard reasons={reasons} settings={reasonCardSettings} />
+      <ValentineCard onAccept={onAcceptValentine} onReject={onRejectValentine} settings={valentineCardSettings} />
     </div>
   );
 }

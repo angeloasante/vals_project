@@ -12,14 +12,15 @@ import BucketList, { BucketListItemData } from "./BucketList";
 import LoveCoupons, { CouponItemData } from "./LoveCoupons";
 import Gallery, { GalleryItem } from "./Gallery";
 import LoveBook, { PoemData } from "./LoveBook";
-import CelebrationModal from "./modals/CelebrationModal";
+import CelebrationModal, { CelebrationModalSettings } from "./modals/CelebrationModal";
 import NoteModal from "./modals/NoteModal";
-import RejectionModal from "./modals/RejectionModal";
-import SecondRejectionModal from "./modals/SecondRejectionModal";
+import RejectionModal, { RejectionModalSettings } from "./modals/RejectionModal";
+import SecondRejectionModal, { SecondRejectionModalSettings } from "./modals/SecondRejectionModal";
 import LoveVirusEffect from "./LoveVirusEffect";
 import { createConfetti } from "../utils/effects";
-import { ReasonItemData } from "./bento/ReasonCard";
+import { ReasonItemData, ReasonCardSettings } from "./bento/ReasonCard";
 import { MusicSettingsData } from "./bento/MusicCard";
+import { ValentineCardSettings } from "./bento/ValentineCard";
 
 interface ValentinePageProps {
   startDate: Date;
@@ -38,6 +39,12 @@ interface ValentinePageProps {
   showBucketList?: boolean;
   showOpenWhen?: boolean;
   showCoupons?: boolean;
+  showPoems?: boolean;
+  reasonCardSettings?: ReasonCardSettings;
+  valentineCardSettings?: ValentineCardSettings;
+  celebrationSettings?: CelebrationModalSettings;
+  rejectionSettings?: RejectionModalSettings;
+  secondRejectionSettings?: SecondRejectionModalSettings;
 }
 
 export default function ValentinePage({ 
@@ -57,6 +64,12 @@ export default function ValentinePage({
   showBucketList = true,
   showOpenWhen = true,
   showCoupons = true,
+  showPoems = true,
+  reasonCardSettings,
+  valentineCardSettings,
+  celebrationSettings,
+  rejectionSettings,
+  secondRejectionSettings,
 }: ValentinePageProps) {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showRejection, setShowRejection] = useState(false);
@@ -100,13 +113,15 @@ export default function ValentinePage({
 
       <main className="w-full max-w-4xl px-6 pb-32 mt-8 md:mt-16 z-10 relative">
         <Hero heroTitle={heroTitle} heroSubtitle={heroSubtitle} recipientName={recipientName} />
-        <LoveBook poems={poems} />
+        {showPoems && <LoveBook poems={poems} />}
         <BentoGrid
           startDate={startDate}
           onAcceptValentine={handleAcceptValentine}
           onRejectValentine={handleRejectValentine}
           reasons={reasons}
           musicSettings={musicSettings}
+          reasonCardSettings={reasonCardSettings}
+          valentineCardSettings={valentineCardSettings}
         />
         <Timeline items={timelineItems} />
         {showOpenWhen && <OpenWhenNotes notes={openWhenNotes} onOpenNote={handleOpenNote} />}
@@ -120,6 +135,7 @@ export default function ValentinePage({
       <CelebrationModal
         isOpen={showCelebration}
         onClose={() => setShowCelebration(false)}
+        settings={celebrationSettings}
       />
       <NoteModal
         isOpen={showNote}
@@ -131,12 +147,14 @@ export default function ValentinePage({
         onClose={() => setShowRejection(false)}
         onAccept={handleAcceptValentine}
         onStillNo={handleStillNo}
+        settings={rejectionSettings}
       />
       <SecondRejectionModal
         isOpen={showSecondRejection}
         onClose={() => setShowSecondRejection(false)}
         onAccept={handleAcceptValentine}
         onFinalNo={handleFinalNo}
+        settings={secondRejectionSettings}
       />
 
       <LoveVirusEffect

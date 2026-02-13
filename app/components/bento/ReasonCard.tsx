@@ -10,11 +10,15 @@ export interface ReasonItemData {
   text: string;
 }
 
+export interface ReasonCardSettings {
+  title?: string;
+  subtitle?: string;
+  buttonText?: string;
+  anotherButtonText?: string;
+}
+
 // Default reasons for demo
 const DEFAULT_REASONS: ReasonItemData[] = [
-  { text: "Have you seen your ass and boobs girllllllll😂" },
-  { text: "Your fat ass... i mean who am i kidding 🍑😏" },
-  { text: "Your boobs 😍" },
   { text: "Your smile lights up the room" },
   { text: "The way you look at me" },
   { text: "Your kindness to strangers" },
@@ -26,12 +30,18 @@ const DEFAULT_REASONS: ReasonItemData[] = [
 
 interface ReasonCardProps {
   reasons?: ReasonItemData[];
+  settings?: ReasonCardSettings;
 }
 
-export default function ReasonCard({ reasons }: ReasonCardProps) {
+export default function ReasonCard({ reasons, settings }: ReasonCardProps) {
   const reasonList = reasons && reasons.length > 0 ? reasons : DEFAULT_REASONS;
   const [showResult, setShowResult] = useState(false);
   const [currentReason, setCurrentReason] = useState("");
+
+  const title = settings?.title || "Why I Love You";
+  const subtitle = settings?.subtitle || "Tap to reveal a reason";
+  const buttonText = settings?.buttonText || "Tell Me Why";
+  const anotherButtonText = settings?.anotherButtonText || "Another One";
 
   const generateReason = () => {
     const random = reasonList[Math.floor(Math.random() * reasonList.length)];
@@ -53,15 +63,15 @@ export default function ReasonCard({ reasons }: ReasonCardProps) {
             <Icon name="solar:magic-stick-3-linear" width={32} />
           </div>
           <h3 className="text-xl font-medium text-rose-950 mb-1">
-            Why I Love You
+            {title}
           </h3>
-          <p className="text-sm text-rose-800/60 mb-6">Tap to reveal a reason</p>
+          <p className="text-sm text-rose-800/60 mb-6">{subtitle}</p>
           <Button
             onClick={generateReason}
             variant="primary"
             className="px-6 py-3 rounded-xl text-sm"
           >
-            Tell Me Why
+            {buttonText}
           </Button>
         </div>
       ) : (
@@ -73,7 +83,7 @@ export default function ReasonCard({ reasons }: ReasonCardProps) {
             onClick={resetReason}
             className="text-xs text-rose-400 hover:text-rose-600 font-medium tracking-wide uppercase mt-4 border-b border-rose-200 pb-0.5"
           >
-            Another One
+            {anotherButtonText}
           </button>
         </div>
       )}

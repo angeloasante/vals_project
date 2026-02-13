@@ -2,11 +2,19 @@
 
 import Icon from "../ui/Icon";
 
+export interface SecondRejectionModalSettings {
+  title?: string;
+  message?: string;
+  acceptButton?: string;
+  rejectButton?: string;
+}
+
 interface SecondRejectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAccept: () => void;
   onFinalNo: () => void;
+  settings?: SecondRejectionModalSettings;
 }
 
 export default function SecondRejectionModal({
@@ -14,8 +22,14 @@ export default function SecondRejectionModal({
   onClose,
   onAccept,
   onFinalNo,
+  settings,
 }: SecondRejectionModalProps) {
   if (!isOpen) return null;
+
+  const title = settings?.title || "Last Chance!";
+  const message = settings?.message || "I'll make you the happiest person, I promise!";
+  const acceptButton = settings?.acceptButton || "Okay, Yes! ❤️";
+  const rejectButton = settings?.rejectButton || "No 😤";
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center transition-opacity duration-500">
@@ -23,9 +37,9 @@ export default function SecondRejectionModal({
         <div className="w-16 h-16 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
           <Icon name="solar:heart-broken-bold" width={32} />
         </div>
-        <h2 className="text-xl font-bold text-zinc-900 mb-2">Last Chance!</h2>
+        <h2 className="text-xl font-bold text-zinc-900 mb-2">{title}</h2>
         <p className="text-zinc-500 mb-6 text-sm">
-          I&apos;ll make you the happiest person, I promise!
+          {message}
         </p>
         <div className="flex gap-3">
           <button
@@ -35,7 +49,7 @@ export default function SecondRejectionModal({
             }}
             className="flex-1 bg-rose-600 text-white py-3 rounded-xl font-medium hover:bg-rose-700 shadow-lg shadow-rose-200"
           >
-            Okay, Yes! ❤️
+            {acceptButton}
           </button>
           <button
             onClick={() => {
@@ -44,7 +58,7 @@ export default function SecondRejectionModal({
             }}
             className="flex-1 bg-zinc-100 text-zinc-600 py-3 rounded-xl font-medium hover:bg-zinc-200"
           >
-            No 😤
+            {rejectButton}
           </button>
         </div>
       </div>

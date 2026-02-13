@@ -6,12 +6,16 @@ import { createClient } from "@/lib/supabase/client";
 import ValentinePage from "@/app/components/ValentinePage";
 import { GalleryItem } from "@/app/components/Gallery";
 import { TimelineItemData } from "@/app/components/Timeline";
-import { ReasonItemData } from "@/app/components/bento/ReasonCard";
+import { ReasonItemData, ReasonCardSettings } from "@/app/components/bento/ReasonCard";
 import { BucketListItemData } from "@/app/components/BucketList";
 import { OpenWhenNoteData } from "@/app/components/OpenWhenNotes";
 import { PoemData } from "@/app/components/LoveBook";
 import { MusicSettingsData } from "@/app/components/bento/MusicCard";
 import { CouponItemData } from "@/app/components/LoveCoupons";
+import { ValentineCardSettings } from "@/app/components/bento/ValentineCard";
+import { CelebrationModalSettings } from "@/app/components/modals/CelebrationModal";
+import { RejectionModalSettings } from "@/app/components/modals/RejectionModal";
+import { SecondRejectionModalSettings } from "@/app/components/modals/SecondRejectionModal";
 
 interface PageData {
   startDate: Date;
@@ -30,6 +34,12 @@ interface PageData {
   showBucketList: boolean;
   showOpenWhen: boolean;
   showCoupons: boolean;
+  showPoems: boolean;
+  reasonCardSettings: ReasonCardSettings;
+  valentineCardSettings: ValentineCardSettings;
+  celebrationSettings: CelebrationModalSettings;
+  rejectionSettings: RejectionModalSettings;
+  secondRejectionSettings: SecondRejectionModalSettings;
 }
 
 export default function UserPage() {
@@ -185,6 +195,38 @@ export default function UserPage() {
         showBucketList: page.show_bucket_list !== false,
         showOpenWhen: page.show_open_when !== false,
         showCoupons: page.show_coupons !== false,
+        showPoems: page.show_poems !== false,
+        // CTA Card settings
+        reasonCardSettings: {
+          title: page.reason_card_title || "Why I Love You",
+          subtitle: page.reason_card_subtitle || "Tap to reveal a reason",
+          buttonText: page.reason_card_button || "Tell Me Why",
+          anotherButtonText: page.reason_card_another_button || "Another One",
+        },
+        valentineCardSettings: {
+          label: page.valentine_card_label || "Important",
+          question: page.valentine_card_question || "Will you be my\nValentine?",
+          yesText: page.valentine_card_yes_text || "Yes, Always",
+          noText: page.valentine_card_no_text || "No",
+        },
+        // Modal settings
+        celebrationSettings: {
+          title: page.celebration_title || "Yay! ❤️",
+          message: page.celebration_message || "You just made me the happiest person alive. I love you so much!",
+          buttonText: page.celebration_button || "Can't wait!",
+        },
+        rejectionSettings: {
+          title: page.rejection_title || "Are you sure?",
+          message: page.rejection_message || "My heart might break into a million pieces...",
+          acceptButton: page.rejection_accept_button || "Yes, I'll be yours",
+          rejectButton: page.rejection_reject_button || "Still No",
+        },
+        secondRejectionSettings: {
+          title: page.second_rejection_title || "Last Chance!",
+          message: page.second_rejection_message || "I'll make you the happiest person, I promise!",
+          acceptButton: page.second_rejection_accept_button || "Okay, Yes! ❤️",
+          rejectButton: page.second_rejection_reject_button || "No 😤",
+        },
       });
       setLoading(false);
     };
@@ -245,6 +287,12 @@ export default function UserPage() {
       showBucketList={pageData.showBucketList}
       showOpenWhen={pageData.showOpenWhen}
       showCoupons={pageData.showCoupons}
+      showPoems={pageData.showPoems}
+      reasonCardSettings={pageData.reasonCardSettings}
+      valentineCardSettings={pageData.valentineCardSettings}
+      celebrationSettings={pageData.celebrationSettings}
+      rejectionSettings={pageData.rejectionSettings}
+      secondRejectionSettings={pageData.secondRejectionSettings}
     />
   );
 }

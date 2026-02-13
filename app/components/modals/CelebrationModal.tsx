@@ -2,16 +2,28 @@
 
 import Icon from "../ui/Icon";
 
+export interface CelebrationModalSettings {
+  title?: string;
+  message?: string;
+  buttonText?: string;
+}
+
 interface CelebrationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  settings?: CelebrationModalSettings;
 }
 
 export default function CelebrationModal({
   isOpen,
   onClose,
+  settings,
 }: CelebrationModalProps) {
   if (!isOpen) return null;
+
+  const title = settings?.title || "Yay! ❤️";
+  const message = settings?.message || "You just made me the happiest person alive. I love you so much!";
+  const buttonText = settings?.buttonText || "Can't wait!";
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center transition-opacity duration-500">
@@ -21,16 +33,16 @@ export default function CelebrationModal({
           <Icon name="solar:confetti-minimalistic-bold" width={40} />
         </div>
         <h2 className="text-3xl font-playfair font-bold text-rose-950 mb-3">
-          Yay! ❤️
+          {title}
         </h2>
         <p className="text-rose-800/70 mb-8 leading-relaxed">
-          You just made me the happiest person alive. I love you so much!
+          {message}
         </p>
         <button
           onClick={onClose}
           className="w-full bg-rose-600 text-white py-4 rounded-2xl font-medium hover:bg-rose-700 transition-colors shadow-lg shadow-rose-200"
         >
-          Can&apos;t wait!
+          {buttonText}
         </button>
       </div>
     </div>
