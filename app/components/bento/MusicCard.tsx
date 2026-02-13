@@ -4,15 +4,32 @@ import { useState, useEffect, useRef } from "react";
 import GlassCard from "../ui/GlassCard";
 import Icon from "../ui/Icon";
 
-// Optimized MP3 audio file (494KB vs 31MB MOV)
-const AUDIO_SRC = "/our-song.mp3";
-
-const ALBUM_COVER = "https://i.scdn.co/image/ab67616d0000b273645e5c6c5babe534c007e2c5";
+// Default values for demo
+const DEFAULT_AUDIO_SRC = "/our-song.mp3";
+const DEFAULT_ALBUM_COVER = "https://i.scdn.co/image/ab67616d0000b273645e5c6c5babe534c007e2c5";
+const DEFAULT_SONG_TITLE = "Our Song";
+const DEFAULT_ARTIST = "For Us 💕";
 
 // Fixed heights for sound wave bars (no Math.random() to avoid hydration mismatch)
 const WAVE_HEIGHTS = [18, 22, 14, 20, 16];
 
-export default function MusicCard() {
+export interface MusicSettingsData {
+  songUrl?: string;
+  songTitle?: string;
+  artist?: string;
+  albumCover?: string;
+}
+
+interface MusicCardProps {
+  settings?: MusicSettingsData;
+}
+
+export default function MusicCard({ settings }: MusicCardProps) {
+  const audioSrc = settings?.songUrl || DEFAULT_AUDIO_SRC;
+  const albumCover = settings?.albumCover || DEFAULT_ALBUM_COVER;
+  const songTitle = settings?.songTitle || DEFAULT_SONG_TITLE;
+  const artist = settings?.artist || DEFAULT_ARTIST;
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -54,7 +71,7 @@ export default function MusicCard() {
       {mounted && (
         <audio
           ref={audioRef}
-          src={AUDIO_SRC}
+          src={audioSrc}
           loop
           preload="auto"
           onCanPlayThrough={() => setIsLoaded(true)}
@@ -65,7 +82,7 @@ export default function MusicCard() {
       {/* Album art background */}
       <div
         className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:scale-110 transition-transform duration-700 blur-sm"
-        style={{ backgroundImage: `url('${ALBUM_COVER}')` }}
+        style={{ backgroundImage: `url('${albumCover}')` }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-rose-900/60 via-rose-800/30 to-transparent" />
 
@@ -84,7 +101,7 @@ export default function MusicCard() {
         <div
           className="w-14 h-14 md:w-16 md:h-16 rounded-full border-2 border-white/50 overflow-hidden"
           style={{
-            backgroundImage: `url('${ALBUM_COVER}')`,
+            backgroundImage: `url('${albumCover}')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -116,8 +133,8 @@ export default function MusicCard() {
           ))}
         </div>
 
-        <h3 className="font-bold text-rose-900 text-sm md:text-base">Our Song</h3>
-        <p className="text-xs text-rose-800/80 font-medium">For Us 💕</p>
+        <h3 className="font-bold text-rose-900 text-sm md:text-base">{songTitle}</h3>
+        <p className="text-xs text-rose-800/80 font-medium">{artist}</p>
 
         {/* Play button */}
         <button

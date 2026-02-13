@@ -5,26 +5,37 @@ import Icon from "../ui/Icon";
 import GlassCard from "../ui/GlassCard";
 import Button from "../ui/Button";
 
-const reasons = [
-  "Have you seen your ass and boobs girllllllll😂",
-  "Your fat ass... i mean who am i kidding 🍑😏",
-  "Your boobs 😍",
-  "Your smile lights up the room",
-  "The way you look at me",
-  "Your kindness to strangers",
-  "How you support my dreams",
-  "Your silly laugh",
-  "The safety I feel with you",
-  "Your morning voice",
+export interface ReasonItemData {
+  id?: string;
+  text: string;
+}
+
+// Default reasons for demo
+const DEFAULT_REASONS: ReasonItemData[] = [
+  { text: "Have you seen your ass and boobs girllllllll😂" },
+  { text: "Your fat ass... i mean who am i kidding 🍑😏" },
+  { text: "Your boobs 😍" },
+  { text: "Your smile lights up the room" },
+  { text: "The way you look at me" },
+  { text: "Your kindness to strangers" },
+  { text: "How you support my dreams" },
+  { text: "Your silly laugh" },
+  { text: "The safety I feel with you" },
+  { text: "Your morning voice" },
 ];
 
-export default function ReasonCard() {
+interface ReasonCardProps {
+  reasons?: ReasonItemData[];
+}
+
+export default function ReasonCard({ reasons }: ReasonCardProps) {
+  const reasonList = reasons && reasons.length > 0 ? reasons : DEFAULT_REASONS;
   const [showResult, setShowResult] = useState(false);
   const [currentReason, setCurrentReason] = useState("");
 
   const generateReason = () => {
-    const random = reasons[Math.floor(Math.random() * reasons.length)];
-    setCurrentReason(random);
+    const random = reasonList[Math.floor(Math.random() * reasonList.length)];
+    setCurrentReason(random.text);
     setShowResult(true);
   };
 

@@ -1,32 +1,16 @@
 "use client";
 
 import Icon from "../ui/Icon";
-
-const notes = {
-  mad: {
-    title: "Take a Breath...",
-    text: "I'm sorry if I made you mad. You know I never want to upset you. Just remember that we are on the same team. I love you, and I'm ready to listen whenever you are ready to talk. Let's fix this together.",
-  },
-  sad: {
-    title: "Here's a Hug",
-    text: "I wish I could be there to hold you right now. It's okay to not be okay sometimes. You are so strong, but you don't always have to be. I've got your back, always. This too shall pass, my love.",
-  },
-  miss: {
-    title: "I Miss You Too",
-    text: "Distance means so little when someone means so much. Close your eyes and feel my hand in yours. I am thinking about you right this second. Can't wait to see you again.",
-  },
-};
+import { OpenWhenNoteData } from "../OpenWhenNotes";
 
 interface NoteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  noteType: "mad" | "sad" | "miss" | null;
+  note: OpenWhenNoteData | null;
 }
 
-export default function NoteModal({ isOpen, onClose, noteType }: NoteModalProps) {
-  if (!isOpen || !noteType) return null;
-
-  const note = notes[noteType];
+export default function NoteModal({ isOpen, onClose, note }: NoteModalProps) {
+  if (!isOpen || !note) return null;
 
   return (
     <div className="fixed inset-0 bg-rose-950/40 backdrop-blur-md z-[150] flex items-center justify-center transition-opacity duration-300">
@@ -56,7 +40,7 @@ export default function NoteModal({ isOpen, onClose, noteType }: NoteModalProps)
           </h3>
           <div className="max-h-[50vh] overflow-y-auto pr-2">
             <p className="text-rose-900/80 leading-loose font-playfair italic text-lg">
-              {note.text}
+              {note.message}
             </p>
           </div>
           <div className="mt-8 pt-6 border-t border-rose-200/50 flex justify-center">

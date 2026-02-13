@@ -3,6 +3,15 @@
 import Icon from "./ui/Icon";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
+export interface OpenWhenNoteData {
+  id?: string;
+  type: string;
+  title: string;
+  message: string;
+  icon: string;
+  iconColor: string;
+}
+
 interface EnvelopeNoteProps {
   icon: string;
   iconColor: string;
@@ -40,35 +49,38 @@ function EnvelopeNote({
   );
 }
 
+const DEFAULT_NOTES: OpenWhenNoteData[] = [
+  {
+    type: "mad",
+    icon: "solar:fire-linear",
+    iconColor: "text-rose-400",
+    title: "You're Mad",
+    message: "I'm sorry if I made you mad. You know I never want to upset you. Just remember that we are on the same team. I love you, and I'm ready to listen whenever you are ready to talk. Let's fix this together.",
+  },
+  {
+    type: "sad",
+    icon: "solar:cloud-rain-linear",
+    iconColor: "text-blue-400",
+    title: "You're Sad",
+    message: "I wish I could be there to hold you right now. It's okay to not be okay sometimes. You are so strong, but you don't always have to be. I've got your back, always. This too shall pass, my love.",
+  },
+  {
+    type: "miss",
+    icon: "solar:map-point-search-linear",
+    iconColor: "text-rose-400",
+    title: "Miss Me",
+    message: "Distance means so little when someone means so much. Close your eyes and feel my hand in yours. I am thinking about you right this second. Can't wait to see you again.",
+  },
+];
+
 interface OpenWhenNotesProps {
-  onOpenNote: (type: "mad" | "sad" | "miss") => void;
+  notes?: OpenWhenNoteData[];
+  onOpenNote: (note: OpenWhenNoteData) => void;
 }
 
-export default function OpenWhenNotes({ onOpenNote }: OpenWhenNotesProps) {
+export default function OpenWhenNotes({ notes, onOpenNote }: OpenWhenNotesProps) {
   const headerRef = useScrollReveal();
-
-  const notes = [
-    {
-      type: "mad" as const,
-      icon: "solar:fire-linear",
-      iconColor: "text-rose-400",
-      title: "You're Mad",
-    },
-    {
-      type: "sad" as const,
-      icon: "solar:cloud-rain-linear",
-      iconColor: "text-blue-400",
-      title: "You're Sad",
-      delay: "delay-100",
-    },
-    {
-      type: "miss" as const,
-      icon: "solar:map-point-search-linear",
-      iconColor: "text-rose-400",
-      title: "Miss Me",
-      delay: "delay-200",
-    },
-  ];
+  const noteList = notes && notes.length > 0 ? notes : DEFAULT_NOTES;
 
   return (
     <div className="mb-32">
@@ -83,14 +95,14 @@ export default function OpenWhenNotes({ onOpenNote }: OpenWhenNotesProps) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {notes.map((note) => (
+        {noteList.map((note, index) => (
           <EnvelopeNote
-            key={note.type}
+            key={note.id || index}
             icon={note.icon}
             iconColor={note.iconColor}
             title={note.title}
-            onClick={() => onOpenNote(note.type)}
-            delay={note.delay}
+            onClick={() => onOpenNote(note)}
+            delay={index > 0 ? `delay-${index * 100}` : undefined}
           />
         ))}
       </div>

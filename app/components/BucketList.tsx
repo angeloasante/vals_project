@@ -4,6 +4,12 @@ import Icon from "./ui/Icon";
 import GlassCard from "./ui/GlassCard";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
+export interface BucketListItemData {
+  id?: string;
+  text: string;
+  completed?: boolean;
+}
+
 interface BucketListItemProps {
   text: string;
   completed?: boolean;
@@ -34,7 +40,7 @@ function BucketListItem({ text, completed = false }: BucketListItemProps) {
   );
 }
 
-const bucketListItems = [
+const DEFAULT_BUCKET_LIST: BucketListItemData[] = [
   { text: "Raising a Pengu together😂", completed: true },
   { text: "Stay on a call 24hrs NB: long distance is a b!tch", completed: true },
   { text: "Travel to the world together", completed: false },
@@ -42,7 +48,12 @@ const bucketListItems = [
   { text: "Fuck the hell out of each other", completed: false },
 ];
 
-export default function BucketList() {
+interface BucketListProps {
+  items?: BucketListItemData[];
+}
+
+export default function BucketList({ items }: BucketListProps) {
+  const bucketListItems = items && items.length > 0 ? items : DEFAULT_BUCKET_LIST;
   const ref = useScrollReveal();
 
   return (

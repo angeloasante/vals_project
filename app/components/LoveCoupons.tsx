@@ -4,6 +4,12 @@ import { useState } from "react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 import { createConfetti } from "../utils/effects";
 
+export interface CouponItemData {
+  id?: string;
+  title: string;
+  subtitle: string;
+}
+
 interface CouponProps {
   title: string;
   subtitle: string;
@@ -57,13 +63,18 @@ function Coupon({ title, subtitle }: CouponProps) {
   );
 }
 
-const coupons = [
+const DEFAULT_COUPONS: CouponItemData[] = [
   { title: "Back Massage", subtitle: "20 Mins" },
   { title: "Dinner Date", subtitle: "My Treat" },
   { title: "Forgiveness", subtitle: "End 1 Argument" },
 ];
 
-export default function LoveCoupons() {
+interface LoveCouponsProps {
+  coupons?: CouponItemData[];
+}
+
+export default function LoveCoupons({ coupons }: LoveCouponsProps) {
+  const couponList = coupons && coupons.length > 0 ? coupons : DEFAULT_COUPONS;
   const headerRef = useScrollReveal();
 
   return (
@@ -76,8 +87,8 @@ export default function LoveCoupons() {
       </div>
 
       <div className="flex flex-wrap justify-center gap-6">
-        {coupons.map((coupon, index) => (
-          <Coupon key={index} {...coupon} />
+        {couponList.map((coupon, index) => (
+          <Coupon key={coupon.id || index} {...coupon} />
         ))}
       </div>
     </div>

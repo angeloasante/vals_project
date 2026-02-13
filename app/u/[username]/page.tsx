@@ -6,6 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import ValentinePage from "@/app/components/ValentinePage";
 import { GalleryItem } from "@/app/components/Gallery";
 import { TimelineItemData } from "@/app/components/Timeline";
+import { ReasonItemData } from "@/app/components/bento/ReasonCard";
+import { BucketListItemData } from "@/app/components/BucketList";
+import { OpenWhenNoteData } from "@/app/components/OpenWhenNotes";
+import { MusicSettingsData } from "@/app/components/bento/MusicCard";
+import { CouponItemData } from "@/app/components/LoveCoupons";
 
 interface PageData {
   startDate: Date;
@@ -15,6 +20,14 @@ interface PageData {
   heroSubtitle: string;
   galleryItems: GalleryItem[];
   timelineItems: TimelineItemData[];
+  reasons: ReasonItemData[];
+  bucketList: BucketListItemData[];
+  openWhenNotes: OpenWhenNoteData[];
+  musicSettings: MusicSettingsData;
+  coupons: CouponItemData[];
+  showBucketList: boolean;
+  showOpenWhen: boolean;
+  showCoupons: boolean;
 }
 
 export default function UserPage() {
@@ -76,6 +89,20 @@ export default function UserPage() {
         .eq("page_id", page.id)
         .order("order_index", { ascending: true });
 
+      // Get reasons
+      const { data: reasonsData } = await supabase
+        .from("reasons")
+        .select("*")
+        .eq("page_id", page.id)
+        .order("order_index", { ascending: true });
+
+      // Get bucket list
+      const { data: bucketData } = await supabase
+        .from("bucket_list")
+        .select("*")
+        .eq("page_id", page.id)
+        .order("order_index", { ascending: true });
+
       // Transform gallery items
       const galleryItems: GalleryItem[] = (galleryData || []).map((item) => ({
         id: item.id,
@@ -93,6 +120,19 @@ export default function UserPage() {
         imageSrc: item.image_src,
       }));
 
+      // Transform reasons
+      const reasons: ReasonItemData[] = (reasonsData || []).map((item) => ({
+        id: item.id,
+        text: item.text,
+      }));
+
+      // Transform bucket list
+      const bucketList: BucketListItemData[] = (bucketData || []).map((item) => ({
+        id: item.id,
+        text: item.text,
+        completed: item.completed || false,
+      }));
+
       setPageData({
         startDate: new Date(page.start_date),
         recipientName: page.recipient_name,
@@ -101,6 +141,16 @@ export default function UserPage() {
         heroSubtitle: page.hero_subtitle || "In all the world, there is no heart for me like yours. In all the world, there is no love for you like mine.",
         galleryItems,
         timelineItems,
+        reasons,
+        bucketList,
+        // These will use defaults if not customized (future feature)
+        openWhenNotes: [],
+        musicSettings: {},
+        coupons: [],
+        // Visibility settings
+        showBucketList: page.show_bucket_list !== false,
+        showOpenWhen: page.show_open_when !== false,
+        showCoupons: page.show_coupons !== false,
       });
       setLoading(false);
     };
@@ -152,6 +202,14 @@ export default function UserPage() {
       heroSubtitle={pageData.heroSubtitle}
       galleryItems={pageData.galleryItems}
       timelineItems={pageData.timelineItems}
+      reasons={pageData.reasons}
+      bucketList={pageData.bucketList}
+      openWhenNotes={pageData.openWhenNotes}
+      musicSettings={pageData.musicSettings}
+      coupons={pageData.coupons}
+      showBucketList={pageData.showBucketList}
+      showOpenWhen={pageData.showOpenWhen}
+      showCoupons={pageData.showCoupons}
     />
   );
 }

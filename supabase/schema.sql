@@ -47,6 +47,9 @@ CREATE TABLE public.valentine_pages (
   hero_subtitle TEXT DEFAULT 'A little corner of the internet, just for you',
   primary_color TEXT DEFAULT 'rose',
   is_published BOOLEAN DEFAULT false,
+  show_bucket_list BOOLEAN DEFAULT true,
+  show_open_when BOOLEAN DEFAULT true,
+  show_coupons BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id) -- One page per user for now
@@ -178,6 +181,42 @@ CREATE POLICY "Users can manage their own reasons"
     EXISTS (
       SELECT 1 FROM public.valentine_pages
       WHERE id = reasons.page_id
+      AND user_id = auth.uid()
+    )
+  );
+
+-- =============================================
+-- BUCKET LIST TABLE
+-- =============================================
+CREATE TABLE public.bucket_list (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  page_id UUID REFERENCES public.valentine_pages(id) ON DELETE CASCADE NOT NULL,
+  text TEXT NOT NULL,
+  completed BOOLEAN DEFAULT false,
+  order_index INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.bucket_list ENABLE ROW LEVEL SECURITY;
+
+-- Bucket list policies
+CREATE POLICY "Bucket list viewable if page is published or owned"
+  ON public.bucket_list FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.valentine_pages
+      WHERE id = bucket_list.page_id
+      AND (is_published = true OR user_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Users can manage their own bucket list"
+  ON public.bucket_list FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.valentine_pages
+      WHERE id = bucket_list.page_id
       AND user_id = auth.uid()
     )
   );

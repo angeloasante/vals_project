@@ -21,6 +21,9 @@ interface ValentinePage {
   hero_title: string;
   hero_subtitle: string;
   is_published: boolean;
+  show_bucket_list: boolean;
+  show_open_when: boolean;
+  show_coupons: boolean;
 }
 
 interface GalleryItem {
@@ -36,6 +39,42 @@ interface TimelineItem {
   title: string;
   description: string;
   image_src: string | null;
+  order_index: number;
+}
+
+interface ReasonItem {
+  id: string;
+  text: string;
+  order_index: number;
+}
+
+interface BucketListItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  order_index: number;
+}
+
+interface OpenWhenNote {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  icon: string;
+  icon_color: string;
+}
+
+interface MusicSettings {
+  song_url: string;
+  song_title: string;
+  artist: string;
+  album_cover: string;
+}
+
+interface CouponItem {
+  id: string;
+  title: string;
+  subtitle: string;
   order_index: number;
 }
 
@@ -59,6 +98,37 @@ export default function DashboardPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timelineImageInputRef = useRef<HTMLInputElement>(null);
   
+  // Reasons state
+  const [reasons, setReasons] = useState<ReasonItem[]>([]);
+  const [showReasonForm, setShowReasonForm] = useState(false);
+  const [editingReason, setEditingReason] = useState<ReasonItem | null>(null);
+  const [reasonForm, setReasonForm] = useState({ text: "" });
+  
+  // Bucket list state
+  const [bucketList, setBucketList] = useState<BucketListItem[]>([]);
+  const [showBucketForm, setShowBucketForm] = useState(false);
+  const [editingBucket, setEditingBucket] = useState<BucketListItem | null>(null);
+  const [bucketForm, setBucketForm] = useState({ text: "", completed: false });
+  
+  // Open when notes state
+  const [openWhenNotes, setOpenWhenNotes] = useState<OpenWhenNote[]>([]);
+  const [showOpenWhenForm, setShowOpenWhenForm] = useState(false);
+  const [editingOpenWhen, setEditingOpenWhen] = useState<OpenWhenNote | null>(null);
+  const [openWhenForm, setOpenWhenForm] = useState({ type: "", title: "", message: "", icon: "solar:heart-linear", iconColor: "text-rose-400" });
+  
+  // Music settings state
+  const [musicSettings, setMusicSettings] = useState<MusicSettings>({ song_url: "", song_title: "", artist: "", album_cover: "" });
+  
+  // Coupons state
+  const [coupons, setCoupons] = useState<CouponItem[]>([]);
+  const [showCouponForm, setShowCouponForm] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<CouponItem | null>(null);
+  const [couponForm, setCouponForm] = useState({ title: "", subtitle: "" });
+  
+  // Gallery editing
+  const [editingGalleryCaption, setEditingGalleryCaption] = useState<string | null>(null);
+  const [galleryCaptionText, setGalleryCaptionText] = useState("");
+  
   // Form states
   const [recipientName, setRecipientName] = useState("My Love");
   const [senderName, setSenderName] = useState("");
@@ -66,6 +136,11 @@ export default function DashboardPage() {
   const [heroTitle, setHeroTitle] = useState("To My Everything");
   const [heroSubtitle, setHeroSubtitle] = useState("A little corner of the internet, just for you 💕");
   const [isPublished, setIsPublished] = useState(false);
+  
+  // Section visibility toggles
+  const [showBucketListSection, setShowBucketListSection] = useState(true);
+  const [showOpenWhenSection, setShowOpenWhenSection] = useState(true);
+  const [showCouponsSection, setShowCouponsSection] = useState(true);
 
   const router = useRouter();
   const supabase = createClient();
@@ -119,6 +194,9 @@ export default function DashboardPage() {
       setHeroTitle(pageData.hero_title || "To My Everything");
       setHeroSubtitle(pageData.hero_subtitle || "A little corner of the internet, just for you 💕");
       setIsPublished(pageData.is_published || false);
+      setShowBucketListSection(pageData.show_bucket_list !== false);
+      setShowOpenWhenSection(pageData.show_open_when !== false);
+      setShowCouponsSection(pageData.show_coupons !== false);
 
       // Load gallery items
       const { data: galleryData } = await supabase
@@ -141,6 +219,28 @@ export default function DashboardPage() {
       if (timelineData) {
         setTimelineItems(timelineData);
       }
+
+      // Load reasons
+      const { data: reasonsData } = await supabase
+        .from("reasons")
+        .select("*")
+        .eq("page_id", pageData.id)
+        .order("order_index", { ascending: true });
+
+      if (reasonsData) {
+        setReasons(reasonsData);
+      }
+
+      // Load bucket list
+      const { data: bucketData } = await supabase
+        .from("bucket_list")
+        .select("*")
+        .eq("page_id", pageData.id)
+        .order("order_index", { ascending: true });
+
+      if (bucketData) {
+        setBucketList(bucketData);
+      }
     }
 
     setLoading(false);
@@ -161,6 +261,9 @@ export default function DashboardPage() {
         hero_title: heroTitle,
         hero_subtitle: heroSubtitle,
         is_published: isPublished,
+        show_bucket_list: showBucketListSection,
+        show_open_when: showOpenWhenSection,
+        show_coupons: showCouponsSection,
       })
       .eq("id", page.id);
 
@@ -447,6 +550,229 @@ export default function DashboardPage() {
     setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
   };
 
+  // Reasons handlers
+  const handleAddReason = async () => {
+    if (!page?.id || !reasonForm.text.trim()) {
+      setMessage({ type: "error", text: "Please enter a reason" });
+      return;
+    }
+
+    setSaving(true);
+    
+    const { data: newItem, error } = await supabase
+      .from("reasons")
+      .insert({
+        page_id: page.id,
+        text: reasonForm.text.trim(),
+        order_index: reasons.length,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to add reason" });
+    } else if (newItem) {
+      setReasons((prev) => [...prev, newItem]);
+      setReasonForm({ text: "" });
+      setShowReasonForm(false);
+      setMessage({ type: "success", text: "Reason added!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleEditReason = async () => {
+    if (!editingReason) return;
+    
+    setSaving(true);
+    
+    const { error } = await supabase
+      .from("reasons")
+      .update({ text: reasonForm.text.trim() })
+      .eq("id", editingReason.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update" });
+    } else {
+      setReasons((prev) =>
+        prev.map((item) =>
+          item.id === editingReason.id ? { ...item, text: reasonForm.text.trim() } : item
+        )
+      );
+      setEditingReason(null);
+      setReasonForm({ text: "" });
+      setShowReasonForm(false);
+      setMessage({ type: "success", text: "Reason updated!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleDeleteReason = async (item: ReasonItem) => {
+    if (!confirm("Delete this reason?")) return;
+
+    const { error } = await supabase
+      .from("reasons")
+      .delete()
+      .eq("id", item.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to delete" });
+    } else {
+      setReasons((prev) => prev.filter((r) => r.id !== item.id));
+      setMessage({ type: "success", text: "Reason deleted" });
+    }
+  };
+
+  const startEditReason = (item: ReasonItem) => {
+    setEditingReason(item);
+    setReasonForm({ text: item.text });
+    setShowReasonForm(true);
+  };
+
+  const cancelReasonForm = () => {
+    setShowReasonForm(false);
+    setEditingReason(null);
+    setReasonForm({ text: "" });
+  };
+
+  // Bucket list handlers
+  const handleAddBucketItem = async () => {
+    if (!page?.id || !bucketForm.text.trim()) {
+      setMessage({ type: "error", text: "Please enter a bucket list item" });
+      return;
+    }
+
+    setSaving(true);
+    
+    const { data: newItem, error } = await supabase
+      .from("bucket_list")
+      .insert({
+        page_id: page.id,
+        text: bucketForm.text.trim(),
+        completed: bucketForm.completed,
+        order_index: bucketList.length,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to add item" });
+    } else if (newItem) {
+      setBucketList((prev) => [...prev, newItem]);
+      setBucketForm({ text: "", completed: false });
+      setShowBucketForm(false);
+      setMessage({ type: "success", text: "Bucket list item added!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleEditBucketItem = async () => {
+    if (!editingBucket) return;
+    
+    setSaving(true);
+    
+    const { error } = await supabase
+      .from("bucket_list")
+      .update({ 
+        text: bucketForm.text.trim(),
+        completed: bucketForm.completed 
+      })
+      .eq("id", editingBucket.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update" });
+    } else {
+      setBucketList((prev) =>
+        prev.map((item) =>
+          item.id === editingBucket.id 
+            ? { ...item, text: bucketForm.text.trim(), completed: bucketForm.completed } 
+            : item
+        )
+      );
+      setEditingBucket(null);
+      setBucketForm({ text: "", completed: false });
+      setShowBucketForm(false);
+      setMessage({ type: "success", text: "Item updated!" });
+    }
+    
+    setSaving(false);
+  };
+
+  const handleDeleteBucketItem = async (item: BucketListItem) => {
+    if (!confirm("Delete this item?")) return;
+
+    const { error } = await supabase
+      .from("bucket_list")
+      .delete()
+      .eq("id", item.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to delete" });
+    } else {
+      setBucketList((prev) => prev.filter((b) => b.id !== item.id));
+      setMessage({ type: "success", text: "Item deleted" });
+    }
+  };
+
+  const handleToggleBucketComplete = async (item: BucketListItem) => {
+    const newCompleted = !item.completed;
+    
+    const { error } = await supabase
+      .from("bucket_list")
+      .update({ completed: newCompleted })
+      .eq("id", item.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update" });
+    } else {
+      setBucketList((prev) =>
+        prev.map((b) => b.id === item.id ? { ...b, completed: newCompleted } : b)
+      );
+    }
+  };
+
+  const startEditBucketItem = (item: BucketListItem) => {
+    setEditingBucket(item);
+    setBucketForm({ text: item.text, completed: item.completed });
+    setShowBucketForm(true);
+  };
+
+  const cancelBucketForm = () => {
+    setShowBucketForm(false);
+    setEditingBucket(null);
+    setBucketForm({ text: "", completed: false });
+  };
+
+  // Gallery caption handler
+  const handleUpdateCaption = async (item: GalleryItem) => {
+    if (galleryCaptionText === item.caption) {
+      setEditingGalleryCaption(null);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("gallery_items")
+      .update({ caption: galleryCaptionText })
+      .eq("id", item.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update caption" });
+    } else {
+      setGalleryItems((prev) =>
+        prev.map((g) => g.id === item.id ? { ...g, caption: galleryCaptionText } : g)
+      );
+      setMessage({ type: "success", text: "Caption updated!" });
+    }
+    setEditingGalleryCaption(null);
+  };
+
+  const startEditCaption = (item: GalleryItem) => {
+    setEditingGalleryCaption(item.id);
+    setGalleryCaptionText(item.caption || "");
+  };
+
   const pageUrl = `https://vals.love/u/${profile?.username}`;
 
   // Calculate days together for preview
@@ -576,6 +902,9 @@ export default function DashboardPage() {
                 { id: "gallery", label: "📸 Gallery" },
                 { id: "timeline", label: "📅 Timeline" },
                 { id: "reasons", label: "💕 Reasons" },
+                { id: "bucketlist", label: "📝 Bucket List" },
+                { id: "openwhen", label: "💌 Love Letters" },
+                { id: "coupons", label: "🎟️ Coupons" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -709,22 +1038,61 @@ export default function DashboardPage() {
                       {galleryItems.map((item) => (
                         <div
                           key={item.id}
-                          className="relative group aspect-square rounded-xl overflow-hidden bg-white/10"
+                          className="relative group rounded-xl overflow-hidden bg-white/10"
                         >
-                          <Image
-                            src={item.src}
-                            alt={item.caption || "Gallery photo"}
-                            fill
-                            className="object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button
-                              onClick={() => handleDeletePhoto(item)}
-                              className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
-                            >
-                              🗑️ Delete
-                            </button>
+                          <div className="aspect-square relative">
+                            <Image
+                              src={item.src}
+                              alt={item.caption || "Gallery photo"}
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => startEditCaption(item)}
+                                className="bg-white text-rose-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-rose-50 transition-colors"
+                              >
+                                ✏️ Caption
+                              </button>
+                              <button
+                                onClick={() => handleDeletePhoto(item)}
+                                className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           </div>
+                          {/* Caption editing */}
+                          {editingGalleryCaption === item.id ? (
+                            <div className="p-2 bg-white/5">
+                              <input
+                                type="text"
+                                value={galleryCaptionText}
+                                onChange={(e) => setGalleryCaptionText(e.target.value)}
+                                className="w-full px-2 py-1 text-xs rounded bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                                placeholder="Add a caption..."
+                                autoFocus
+                              />
+                              <div className="flex gap-1 mt-1">
+                                <button
+                                  onClick={() => handleUpdateCaption(item)}
+                                  className="flex-1 text-xs bg-white text-rose-600 py-1 rounded font-medium hover:bg-rose-50"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={() => setEditingGalleryCaption(null)}
+                                  className="flex-1 text-xs bg-white/10 text-white py-1 rounded font-medium hover:bg-white/20"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : item.caption ? (
+                            <div className="p-2 bg-white/5">
+                              <p className="text-xs text-rose-100/80 truncate">{item.caption}</p>
+                            </div>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -908,18 +1276,277 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Reasons I Love You</h2>
-                    <button className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all">
-                      + Add Reason
-                    </button>
+                    {!showReasonForm && (
+                      <button 
+                        onClick={() => setShowReasonForm(true)}
+                        className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all"
+                      >
+                        + Add Reason
+                      </button>
+                    )}
                   </div>
+
+                  {/* Add/Edit Form */}
+                  {showReasonForm && (
+                    <div className="bg-white/5 rounded-xl p-4 space-y-4 border border-white/10">
+                      <h3 className="text-white font-medium">
+                        {editingReason ? "Edit Reason" : "Add New Reason"}
+                      </h3>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Why do you love them?</label>
+                        <textarea
+                          value={reasonForm.text}
+                          onChange={(e) => setReasonForm({ text: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                          rows={3}
+                          placeholder="Their smile lights up the room..."
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={editingReason ? handleEditReason : handleAddReason}
+                          disabled={saving}
+                          className="flex-1 bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all disabled:opacity-50"
+                        >
+                          {saving ? "Saving..." : editingReason ? "Update" : "Add Reason"}
+                        </button>
+                        <button
+                          onClick={cancelReasonForm}
+                          className="px-4 py-2 rounded-xl font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   
-                  <div className="text-center py-12 text-rose-100/70">
-                    <p className="text-4xl mb-4">💕</p>
-                    <p>No reasons yet. Share why you love them!</p>
-                  </div>
+                  {reasons.length === 0 && !showReasonForm ? (
+                    <div className="text-center py-12 text-rose-100/70">
+                      <p className="text-4xl mb-4">💕</p>
+                      <p>No reasons yet. Share why you love them!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {reasons.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="bg-white/5 rounded-xl p-4 border border-white/10 group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-rose-300 text-xs">💕 Reason #{index + 1}</span>
+                              </div>
+                              <p className="text-white">{item.text}</p>
+                            </div>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => startEditReason(item)}
+                                className="text-white/70 hover:text-white text-sm"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReason(item)}
+                                className="text-red-400 hover:text-red-300 text-sm"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <p className="text-sm text-rose-100/50">
-                    Coming soon: Edit reasons directly!
+                    {reasons.length} reason{reasons.length !== 1 ? "s" : ""} why you love them
                   </p>
+                </div>
+              )}
+
+              {activeTab === "bucketlist" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">Bucket List</h2>
+                    <div className="flex items-center gap-3">
+                      {/* Visibility Toggle */}
+                      <button
+                        onClick={() => setShowBucketListSection(!showBucketListSection)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                          showBucketListSection
+                            ? "bg-green-500/20 text-green-300 border border-green-400/30"
+                            : "bg-red-500/20 text-red-300 border border-red-400/30"
+                        }`}
+                      >
+                        {showBucketListSection ? "👁️ Visible" : "🚫 Hidden"}
+                      </button>
+                      {!showBucketForm && (
+                        <button 
+                          onClick={() => setShowBucketForm(true)}
+                          className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all"
+                        >
+                          + Add Item
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {!showBucketListSection && (
+                    <div className="bg-yellow-500/10 border border-yellow-400/30 rounded-xl p-3 text-yellow-200 text-sm">
+                      ⚠️ This section is hidden on your page. Toggle visibility above to show it.
+                    </div>
+                  )}
+
+                  {/* Add/Edit Form */}
+                  {showBucketForm && (
+                    <div className="bg-white/5 rounded-xl p-4 space-y-4 border border-white/10">
+                      <h3 className="text-white font-medium">
+                        {editingBucket ? "Edit Item" : "Add New Item"}
+                      </h3>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">What&apos;s on your bucket list?</label>
+                        <input
+                          type="text"
+                          value={bucketForm.text}
+                          onChange={(e) => setBucketForm({ ...bucketForm, text: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="Travel to Paris together..."
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="bucket-completed"
+                          checked={bucketForm.completed}
+                          onChange={(e) => setBucketForm({ ...bucketForm, completed: e.target.checked })}
+                          className="w-4 h-4 rounded border-white/20 bg-white/10 text-rose-500 focus:ring-rose-500"
+                        />
+                        <label htmlFor="bucket-completed" className="text-sm text-rose-100">
+                          Already completed? ✅
+                        </label>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={editingBucket ? handleEditBucketItem : handleAddBucketItem}
+                          disabled={saving}
+                          className="flex-1 bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all disabled:opacity-50"
+                        >
+                          {saving ? "Saving..." : editingBucket ? "Update" : "Add Item"}
+                        </button>
+                        <button
+                          onClick={cancelBucketForm}
+                          className="px-4 py-2 rounded-xl font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {bucketList.length === 0 && !showBucketForm ? (
+                    <div className="text-center py-12 text-rose-100/70">
+                      <p className="text-4xl mb-4">📝</p>
+                      <p>No bucket list items yet. Add your dreams together!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {bucketList.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="bg-white/5 rounded-xl p-4 border border-white/10 group"
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* Checkbox to toggle complete */}
+                            <button
+                              onClick={() => handleToggleBucketComplete(item)}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
+                                item.completed
+                                  ? "bg-green-500 text-white"
+                                  : "border-2 border-white/30 hover:border-white/50"
+                              }`}
+                            >
+                              {item.completed && <span className="text-xs">✓</span>}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-rose-300 text-xs">#{index + 1}</span>
+                                {item.completed && (
+                                  <span className="text-green-400 text-xs">✓ Done!</span>
+                                )}
+                              </div>
+                              <p className={`text-white ${item.completed ? "line-through text-white/50" : ""}`}>
+                                {item.text}
+                              </p>
+                            </div>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => startEditBucketItem(item)}
+                                className="text-white/70 hover:text-white text-sm"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeleteBucketItem(item)}
+                                className="text-red-400 hover:text-red-300 text-sm"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-rose-100/50">
+                    {bucketList.length} item{bucketList.length !== 1 ? "s" : ""} on your list
+                    {bucketList.filter(b => b.completed).length > 0 && (
+                      <span className="text-green-400 ml-2">
+                        • {bucketList.filter(b => b.completed).length} completed!
+                      </span>
+                    )}
+                  </p>
+                  
+                  <p className="text-xs text-rose-100/40 mt-4">
+                    💡 Remember to save settings to apply visibility changes
+                  </p>
+                </div>
+              )}
+
+              {activeTab === "openwhen" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">Love Letters (Open When...)</h2>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <p className="text-rose-100/70 text-center py-8">
+                      <span className="text-4xl block mb-4">💌</span>
+                      Love Letters customization coming soon!
+                      <br />
+                      <span className="text-sm text-rose-100/50 mt-2 block">
+                        For now, default Open When messages will be shown.
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "coupons" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">Love Coupons</h2>
+                  </div>
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <p className="text-rose-100/70 text-center py-8">
+                      <span className="text-4xl block mb-4">🎟️</span>
+                      Love Coupons customization coming soon!
+                      <br />
+                      <span className="text-sm text-rose-100/50 mt-2 block">
+                        For now, default coupons will be shown.
+                      </span>
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
