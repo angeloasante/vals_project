@@ -16,7 +16,7 @@ import CelebrationModal, { CelebrationModalSettings } from "./modals/Celebration
 import NoteModal from "./modals/NoteModal";
 import RejectionModal, { RejectionModalSettings } from "./modals/RejectionModal";
 import SecondRejectionModal, { SecondRejectionModalSettings } from "./modals/SecondRejectionModal";
-import LoveVirusEffect from "./LoveVirusEffect";
+import LoveVirusEffect, { LoveVirusSettings } from "./LoveVirusEffect";
 import { createConfetti } from "../utils/effects";
 import { ReasonItemData, ReasonCardSettings } from "./bento/ReasonCard";
 import { MusicSettingsData } from "./bento/MusicCard";
@@ -47,6 +47,7 @@ interface ValentinePageProps {
   celebrationSettings?: CelebrationModalSettings;
   rejectionSettings?: RejectionModalSettings;
   secondRejectionSettings?: SecondRejectionModalSettings;
+  virusSettings?: LoveVirusSettings;
 }
 
 export default function ValentinePage({ 
@@ -74,6 +75,7 @@ export default function ValentinePage({
   celebrationSettings,
   rejectionSettings,
   secondRejectionSettings,
+  virusSettings,
 }: ValentinePageProps) {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showRejection, setShowRejection] = useState(false);
@@ -164,6 +166,8 @@ export default function ValentinePage({
       <LoveVirusEffect
         isActive={showLoveVirus}
         onComplete={handleVirusComplete}
+        settings={virusSettings}
+        galleryImages={galleryItems?.map(item => item.src)}
       />
     </>
   );

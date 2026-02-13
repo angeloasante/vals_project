@@ -16,6 +16,7 @@ import { ValentineCardSettings } from "@/app/components/bento/ValentineCard";
 import { CelebrationModalSettings } from "@/app/components/modals/CelebrationModal";
 import { RejectionModalSettings } from "@/app/components/modals/RejectionModal";
 import { SecondRejectionModalSettings } from "@/app/components/modals/SecondRejectionModal";
+import { LoveVirusSettings } from "@/app/components/LoveVirusEffect";
 
 interface PageData {
   startDate: Date;
@@ -42,6 +43,7 @@ interface PageData {
   celebrationSettings: CelebrationModalSettings;
   rejectionSettings: RejectionModalSettings;
   secondRejectionSettings: SecondRejectionModalSettings;
+  virusSettings: LoveVirusSettings;
 }
 
 export default function UserPage() {
@@ -231,6 +233,14 @@ export default function UserPage() {
           acceptButton: page.second_rejection_accept_button || "Okay, Yes! ❤️",
           rejectButton: page.second_rejection_reject_button || "No 😤",
         },
+        virusSettings: {
+          images: page.virus_images || [],
+          messages: page.virus_messages || ["I LOVE YOU! 💕", "YOU'RE MINE! 💝", "FOREVER! 💗", "MY BABY! 🥰", "LOCKED IN! 🔐", "NO ESCAPE! 😘"],
+          finalTitle: page.virus_final_title || "You can't escape my love!",
+          finalMessage: page.virus_final_message || "At this point you don't even have an option, we locked in 😂😂",
+          finalSubmessage: page.virus_final_submessage || "Every moment with you is a treasure. Please be my Valentine? 🥺",
+          finalButton: page.virus_final_button || "Fine, YES! I love you too! ❤️",
+        },
       });
       setLoading(false);
     };
@@ -299,6 +309,7 @@ export default function UserPage() {
       celebrationSettings={pageData.celebrationSettings}
       rejectionSettings={pageData.rejectionSettings}
       secondRejectionSettings={pageData.secondRejectionSettings}
+      virusSettings={pageData.virusSettings}
     />
   );
 }

@@ -20,31 +20,12 @@ interface FloatingMessage {
   size: number;
 }
 
-// Your actual photos from public and memories folders
-const PLACEHOLDER_IMAGES = [
-  // From public folder
-  "/10E7404C-F5AB-46D0-BA5F-08CB55A76476_1_105_c.jpeg",
-  "/17E14704-47B0-4053-BEA7-39C5ED8CA06F_1_105_c.jpeg",
-  "/1A4D7476-E890-44CF-80DA-55CE1499350B_1_105_c.jpeg",
-  "/85D5212E-8A69-411E-97A8-4F8912F6E834_1_105_c.jpeg",
-  "/940DDE17-DF81-4F1C-85B5-E7A6760B61EC_1_105_c.jpeg",
-  "/E5A594E5-EBCD-426C-806F-02DF107226FC_1_105_c.jpeg",
-  "/F656920B-3710-47AC-882E-BB42C321FFB3_1_105_c.jpeg",
-  "/first-hello.jpeg",
-  // From memories folder
-  "/memories/6bd5d6d1-d350-4b56-abc7-32532d94ba10.JPG",
-  "/memories/IMG_3819.jpg",
-  "/memories/IMG_4384.PNG",
-  "/memories/IMG_4387.PNG",
-  "/memories/IMG_4389.PNG",
-  "/memories/IMG_4391.PNG",
-  "/memories/IMG_4826.jpg",
-  "/memories/IMG_5562.jpg",
-  "/memories/dbd8cb1c-9a17-435b-8ef0-d460d5b3d6df.JPG",
-  "/memories/temp_image_69296C31-DB69-45A0-97D7-76E1F2C7B526.JPEG",
+// Default images (fallback if no custom images provided)
+const DEFAULT_IMAGES = [
+  "/placeholder-heart.png",
 ];
 
-const LOVE_MESSAGES = [
+const DEFAULT_MESSAGES = [
   "I LOVE YOU! 💕",
   "YOU'RE MINE! 💝",
   "FOREVER! 💗",
@@ -53,16 +34,43 @@ const LOVE_MESSAGES = [
   "NO ESCAPE! 😘",
 ];
 
+export interface LoveVirusSettings {
+  images?: string[];
+  messages?: string[];
+  finalTitle?: string;
+  finalMessage?: string;
+  finalSubmessage?: string;
+  finalButton?: string;
+}
+
 interface LoveVirusEffectProps {
   isActive: boolean;
   onComplete: () => void;
+  settings?: LoveVirusSettings;
+  galleryImages?: string[]; // Fallback to gallery images if no custom images
 }
 
-export default function LoveVirusEffect({ isActive, onComplete }: LoveVirusEffectProps) {
+export default function LoveVirusEffect({ isActive, onComplete, settings, galleryImages }: LoveVirusEffectProps) {
   const [pictures, setPictures] = useState<FlyingPicture[]>([]);
   const [hearts, setHearts] = useState<{ id: number; x: number; y: number }[]>([]);
   const [messages, setMessages] = useState<FloatingMessage[]>([]);
   const [showFinalMessage, setShowFinalMessage] = useState(false);
+
+  // Use custom images, or fall back to gallery images, or use defaults
+  const imagesToUse = (settings?.images && settings.images.length > 0) 
+    ? settings.images 
+    : (galleryImages && galleryImages.length > 0)
+      ? galleryImages
+      : DEFAULT_IMAGES;
+  
+  const messagesToUse = (settings?.messages && settings.messages.length > 0) 
+    ? settings.messages 
+    : DEFAULT_MESSAGES;
+
+  const finalTitle = settings?.finalTitle || "You can't escape my love!";
+  const finalMessage = settings?.finalMessage || "At this point you don't even have an option, we locked in 😂😂";
+  const finalSubmessage = settings?.finalSubmessage || "Every moment with you is a treasure. Please be my Valentine? 🥺";
+  const finalButton = settings?.finalButton || "Fine, YES! I love you too! ❤️";
 
   useEffect(() => {
     if (!isActive) {
@@ -83,7 +91,7 @@ export default function LoveVirusEffect({ isActive, onComplete }: LoveVirusEffec
         rotation: Math.random() * 360 - 180,
         scale: 0.5 + Math.random() * 0.8,
         delay: Math.random() * 2000,
-        src: PLACEHOLDER_IMAGES[Math.floor(Math.random() * PLACEHOLDER_IMAGES.length)],
+        src: imagesToUse[Math.floor(Math.random() * imagesToUse.length)],
       });
     }
     setPictures(newPictures);
@@ -124,7 +132,7 @@ export default function LoveVirusEffect({ isActive, onComplete }: LoveVirusEffec
       clearInterval(messageInterval);
       clearTimeout(messageTimeout);
     };
-  }, [isActive]);
+  }, [isActive, imagesToUse]);
 
   if (!isActive) return null;
 
@@ -178,7 +186,7 @@ export default function LoveVirusEffect({ isActive, onComplete }: LoveVirusEffec
             animationDuration: `${msg.speed}s`,
           }}
         >
-          {LOVE_MESSAGES[Math.floor(Math.random() * LOVE_MESSAGES.length)]}
+          {messagesToUse[Math.floor(Math.random() * messagesToUse.length)]}
         </div>
       ))}
 
@@ -188,19 +196,19 @@ export default function LoveVirusEffect({ isActive, onComplete }: LoveVirusEffec
           <div className="bg-white p-8 md:p-10 rounded-3xl shadow-2xl text-center max-w-md mx-4 animate-bounce-in">
             <div className="text-6xl mb-4">💝</div>
             <h2 className="text-2xl md:text-3xl font-bold text-rose-600 mb-2 font-dancing">
-              You can&apos;t escape my love!
+              {finalTitle}
             </h2>
             <p className="text-zinc-500 text-sm mb-4">
-              At this point you don&apos;t even have an option, we locked in 😂😂
+              {finalMessage}
             </p>
             <p className="text-zinc-600 mb-6">
-              Every moment with you is a treasure. Please be my Valentine? 🥺
+              {finalSubmessage}
             </p>
             <button
               onClick={onComplete}
               className="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-rose-700 transition-colors shadow-lg shadow-rose-300"
             >
-              Fine, YES! I love you too! ❤️
+              {finalButton}
             </button>
           </div>
         </div>

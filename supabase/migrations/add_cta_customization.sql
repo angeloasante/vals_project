@@ -72,3 +72,22 @@ ADD COLUMN IF NOT EXISTS second_rejection_accept_button TEXT DEFAULT 'Okay, Yes!
 
 ALTER TABLE public.valentine_pages 
 ADD COLUMN IF NOT EXISTS second_rejection_reject_button TEXT DEFAULT 'No 😤';
+
+-- Love Virus Effect (appears after final No) customization
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS virus_images TEXT[] DEFAULT '{}';
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS virus_messages TEXT[] DEFAULT ARRAY['I LOVE YOU! 💕', 'YOU''RE MINE! 💝', 'FOREVER! 💗', 'MY BABY! 🥰', 'LOCKED IN! 🔐', 'NO ESCAPE! 😘'];
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS virus_final_title TEXT DEFAULT 'You can''t escape my love!';
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS virus_final_message TEXT DEFAULT 'At this point you don''t even have an option, we locked in 😂😂';
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS virus_final_submessage TEXT DEFAULT 'Every moment with you is a treasure. Please be my Valentine? 🥺';
+
+ALTER TABLE public.valentine_pages 
+ADD COLUMN IF NOT EXISTS virus_final_button TEXT DEFAULT 'Fine, YES! I love you too! ❤️';

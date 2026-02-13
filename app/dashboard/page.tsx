@@ -216,6 +216,14 @@ export default function DashboardPage() {
   const [secondRejectionMessage, setSecondRejectionMessage] = useState("I'll make you the happiest person, I promise!");
   const [secondRejectionAcceptButton, setSecondRejectionAcceptButton] = useState("Okay, Yes! ❤️");
   const [secondRejectionRejectButton, setSecondRejectionRejectButton] = useState("No 😤");
+  // Love Virus Effect settings
+  const [virusImages, setVirusImages] = useState<string[]>([]);
+  const [virusMessages, setVirusMessages] = useState<string[]>(["I LOVE YOU! 💕", "YOU'RE MINE! 💝", "FOREVER! 💗", "MY BABY! 🥰", "LOCKED IN! 🔐", "NO ESCAPE! 😘"]);
+  const [virusFinalTitle, setVirusFinalTitle] = useState("You can't escape my love!");
+  const [virusFinalMessage, setVirusFinalMessage] = useState("At this point you don't even have an option, we locked in 😂😂");
+  const [virusFinalSubmessage, setVirusFinalSubmessage] = useState("Every moment with you is a treasure. Please be my Valentine? 🥺");
+  const [virusFinalButton, setVirusFinalButton] = useState("Fine, YES! I love you too! ❤️");
+  const [newVirusMessage, setNewVirusMessage] = useState("");
 
   const router = useRouter();
   const supabase = createClient();
@@ -296,6 +304,13 @@ export default function DashboardPage() {
       setSecondRejectionMessage(pageData.second_rejection_message || "I'll make you the happiest person, I promise!");
       setSecondRejectionAcceptButton(pageData.second_rejection_accept_button || "Okay, Yes! ❤️");
       setSecondRejectionRejectButton(pageData.second_rejection_reject_button || "No 😤");
+      // Virus Effect settings
+      setVirusImages(pageData.virus_images || []);
+      setVirusMessages(pageData.virus_messages || ["I LOVE YOU! 💕", "YOU'RE MINE! 💝", "FOREVER! 💗", "MY BABY! 🥰", "LOCKED IN! 🔐", "NO ESCAPE! 😘"]);
+      setVirusFinalTitle(pageData.virus_final_title || "You can't escape my love!");
+      setVirusFinalMessage(pageData.virus_final_message || "At this point you don't even have an option, we locked in 😂😂");
+      setVirusFinalSubmessage(pageData.virus_final_submessage || "Every moment with you is a treasure. Please be my Valentine? 🥺");
+      setVirusFinalButton(pageData.virus_final_button || "Fine, YES! I love you too! ❤️");
 
       // Load gallery items
       const { data: galleryData } = await supabase
@@ -409,6 +424,13 @@ export default function DashboardPage() {
         second_rejection_message: secondRejectionMessage,
         second_rejection_accept_button: secondRejectionAcceptButton,
         second_rejection_reject_button: secondRejectionRejectButton,
+        // Virus Effect settings
+        virus_images: virusImages,
+        virus_messages: virusMessages,
+        virus_final_title: virusFinalTitle,
+        virus_final_message: virusFinalMessage,
+        virus_final_submessage: virusFinalSubmessage,
+        virus_final_button: virusFinalButton,
       })
       .eq("id", page.id);
 
@@ -2626,6 +2648,147 @@ export default function DashboardPage() {
                           onChange={(e) => setSecondRejectionRejectButton(e.target.value)}
                           className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
                           placeholder="No 😤"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Love Virus Effect Customization */}
+                  <div className="bg-rose-900/30 rounded-xl p-4 space-y-4 border border-rose-800/30">
+                    <h3 className="text-white font-medium flex items-center gap-2">
+                      <span className="text-lg">🦠</span> Love Virus Effect (After Final No)
+                    </h3>
+                    <p className="text-rose-200/70 text-sm">
+                      When they click the final &quot;No&quot;, they get bombarded with photos and messages! By default, it uses your gallery photos.
+                    </p>
+                    
+                    {/* Virus Photos */}
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-2">Custom Photos (optional - will use gallery if empty)</label>
+                      <div className="grid grid-cols-4 gap-2 mb-2">
+                        {virusImages.map((img, index) => (
+                          <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+                            <Image src={img} alt="" fill className="object-cover" />
+                            <button
+                              onClick={() => setVirusImages(virusImages.filter((_, i) => i !== index))}
+                              className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                        <label className="aspect-square rounded-lg border-2 border-dashed border-white/30 flex items-center justify-center cursor-pointer hover:border-white/50 transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file && page) {
+                                const ext = file.name.split(".").pop();
+                                const fileName = `${page.id}/virus-${Date.now()}.${ext}`;
+                                const { error } = await supabase.storage
+                                  .from("gallery")
+                                  .upload(fileName, file);
+                                if (!error) {
+                                  const { data: { publicUrl } } = supabase.storage
+                                    .from("gallery")
+                                    .getPublicUrl(fileName);
+                                  setVirusImages([...virusImages, publicUrl]);
+                                }
+                              }
+                            }}
+                          />
+                          <span className="text-white/50 text-2xl">+</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Virus Messages */}
+                    <div>
+                      <label className="block text-sm text-rose-100 mb-2">Floating Messages</label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {virusMessages.map((msg, index) => (
+                          <span key={index} className="bg-white/10 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                            {msg}
+                            <button
+                              onClick={() => setVirusMessages(virusMessages.filter((_, i) => i !== index))}
+                              className="text-rose-300 hover:text-white"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newVirusMessage}
+                          onChange={(e) => setNewVirusMessage(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && newVirusMessage.trim()) {
+                              setVirusMessages([...virusMessages, newVirusMessage.trim()]);
+                              setNewVirusMessage("");
+                            }
+                          }}
+                          className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none text-sm"
+                          placeholder="Add a message..."
+                        />
+                        <button
+                          onClick={() => {
+                            if (newVirusMessage.trim()) {
+                              setVirusMessages([...virusMessages, newVirusMessage.trim()]);
+                              setNewVirusMessage("");
+                            }
+                          }}
+                          className="px-3 py-2 bg-white/10 rounded-lg text-white hover:bg-white/20"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Final Message Customization */}
+                    <div className="border-t border-white/10 pt-4 space-y-3">
+                      <p className="text-rose-100 text-sm font-medium">Final Message (appears after photos)</p>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Title</label>
+                        <input
+                          type="text"
+                          value={virusFinalTitle}
+                          onChange={(e) => setVirusFinalTitle(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="You can't escape my love!"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Message</label>
+                        <textarea
+                          value={virusFinalMessage}
+                          onChange={(e) => setVirusFinalMessage(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                          rows={2}
+                          placeholder="At this point you don't even have an option..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Sub-message</label>
+                        <textarea
+                          value={virusFinalSubmessage}
+                          onChange={(e) => setVirusFinalSubmessage(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none"
+                          rows={2}
+                          placeholder="Every moment with you is a treasure..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Button Text</label>
+                        <input
+                          type="text"
+                          value={virusFinalButton}
+                          onChange={(e) => setVirusFinalButton(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="Fine, YES! I love you too! ❤️"
                         />
                       </div>
                     </div>
