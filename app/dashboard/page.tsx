@@ -78,6 +78,13 @@ interface CouponItem {
   order_index: number;
 }
 
+interface PoemItem {
+  id: string;
+  title: string;
+  content: string;
+  order_index: number;
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("settings");
@@ -130,6 +137,18 @@ export default function DashboardPage() {
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<CouponItem | null>(null);
   const [couponForm, setCouponForm] = useState({ title: "", subtitle: "" });
+  
+  // Poems state
+  const [poems, setPoems] = useState<PoemItem[]>([]);
+  const [showPoemForm, setShowPoemForm] = useState(false);
+  const [editingPoem, setEditingPoem] = useState<PoemItem | null>(null);
+  const [poemForm, setPoemForm] = useState({ title: "", content: "" });
+  
+  // AI Poem Generation
+  const [showAiPoemPopup, setShowAiPoemPopup] = useState(false);
+  const [aiPoemPrompt, setAiPoemPrompt] = useState("");
+  const [aiPoemStyle, setAiPoemStyle] = useState("romantic");
+  const [aiPoemGenerating, setAiPoemGenerating] = useState(false);
   
   // Gallery editing
   const [editingGalleryCaption, setEditingGalleryCaption] = useState<string | null>(null);
@@ -257,6 +276,17 @@ export default function DashboardPage() {
 
       if (openWhenData) {
         setOpenWhenNotes(openWhenData);
+      }
+
+      // Load poems
+      const { data: poemsData } = await supabase
+        .from("poems")
+        .select("*")
+        .eq("page_id", pageData.id)
+        .order("order_index", { ascending: true });
+
+      if (poemsData) {
+        setPoems(poemsData);
       }
     }
 
@@ -946,6 +976,125 @@ export default function DashboardPage() {
     }
   };
 
+  // Poem CRUD handlers
+  const handleAddPoem = async () => {
+    if (!page?.id || !poemForm.title.trim() || !poemForm.content.trim()) {
+      setMessage({ type: "error", text: "Please fill in title and content" });
+      return;
+    }
+
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("poems")
+      .insert({
+        page_id: page.id,
+        title: poemForm.title.trim(),
+        content: poemForm.content.trim(),
+        order_index: poems.length,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to add poem" });
+    } else if (data) {
+      setPoems([...poems, data]);
+      setPoemForm({ title: "", content: "" });
+      setShowPoemForm(false);
+      setMessage({ type: "success", text: "Poem added!" });
+    }
+    setSaving(false);
+  };
+
+  const handleEditPoem = async () => {
+    if (!editingPoem || !poemForm.title.trim() || !poemForm.content.trim()) return;
+
+    setSaving(true);
+    const { error } = await supabase
+      .from("poems")
+      .update({
+        title: poemForm.title.trim(),
+        content: poemForm.content.trim(),
+      })
+      .eq("id", editingPoem.id);
+
+    if (error) {
+      setMessage({ type: "error", text: "Failed to update poem" });
+    } else {
+      setPoems((prev) =>
+        prev.map((item) =>
+          item.id === editingPoem.id
+            ? { ...item, title: poemForm.title.trim(), content: poemForm.content.trim() }
+            : item
+        )
+      );
+      setPoemForm({ title: "", content: "" });
+      setShowPoemForm(false);
+      setEditingPoem(null);
+      setMessage({ type: "success", text: "Poem updated!" });
+    }
+    setSaving(false);
+  };
+
+  const handleDeletePoem = async (item: PoemItem) => {
+    if (!confirm("Delete this poem?")) return;
+
+    const { error } = await supabase.from("poems").delete().eq("id", item.id);
+    if (error) {
+      setMessage({ type: "error", text: "Failed to delete poem" });
+    } else {
+      setPoems((prev) => prev.filter((p) => p.id !== item.id));
+      setMessage({ type: "success", text: "Poem deleted!" });
+    }
+  };
+
+  const startEditPoem = (item: PoemItem) => {
+    setEditingPoem(item);
+    setPoemForm({ title: item.title, content: item.content });
+    setShowPoemForm(true);
+  };
+
+  const cancelPoemForm = () => {
+    setShowPoemForm(false);
+    setEditingPoem(null);
+    setPoemForm({ title: "", content: "" });
+  };
+
+  // AI Poem Generator
+  const handleGeneratePoemWithAI = async () => {
+    if (!aiPoemPrompt.trim()) {
+      setMessage({ type: "error", text: "Please enter a vibe or theme" });
+      return;
+    }
+    
+    setAiPoemGenerating(true);
+    try {
+      const response = await fetch("/api/generate-poem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: aiPoemPrompt, style: aiPoemStyle }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        setMessage({ type: "error", text: data.error || "Failed to generate" });
+        return;
+      }
+      
+      // Insert generated content into the form
+      setPoemForm({ ...poemForm, content: data.poem });
+      setShowAiPoemPopup(false);
+      setAiPoemPrompt("");
+      setMessage({ type: "success", text: "✨ Poem generated!" });
+    } catch (error) {
+      console.error("AI poem generation error:", error);
+      setMessage({ type: "error", text: "Failed to generate. Please try again." });
+    } finally {
+      setAiPoemGenerating(false);
+    }
+  };
+
   // Gallery caption handler
   const handleUpdateCaption = async (item: GalleryItem) => {
     if (galleryCaptionText === item.caption) {
@@ -1103,8 +1252,9 @@ export default function DashboardPage() {
                 { id: "gallery", label: "📸 Gallery" },
                 { id: "timeline", label: "📅 Timeline" },
                 { id: "reasons", label: "💕 Reasons" },
+                { id: "poems", label: "📖 Poems" },
                 { id: "bucketlist", label: "📝 Bucket List" },
-                { id: "openwhen", label: "💌 Love Letters" },
+                { id: "openwhen", label: "💌 Open When" },
                 { id: "coupons", label: "🎟️ Coupons" },
               ].map((tab) => (
                 <button
@@ -1562,6 +1712,127 @@ export default function DashboardPage() {
                   
                   <p className="text-sm text-rose-100/50">
                     {reasons.length} reason{reasons.length !== 1 ? "s" : ""} why you love them
+                  </p>
+                </div>
+              )}
+
+              {activeTab === "poems" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-white">Love Poems (Book)</h2>
+                    <div className="flex items-center gap-3">
+                      {!showPoemForm && (
+                        <button 
+                          onClick={() => setShowPoemForm(true)}
+                          className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all"
+                        >
+                          + Add Poem
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Add/Edit Form */}
+                  {showPoemForm && (
+                    <div className="bg-white/5 rounded-xl p-4 space-y-4 border border-white/10">
+                      <h3 className="text-white font-medium">
+                        {editingPoem ? "Edit Poem" : "Add New Poem"}
+                      </h3>
+                      <div>
+                        <label className="block text-sm text-rose-100 mb-1">Poem Title</label>
+                        <input
+                          type="text"
+                          value={poemForm.title}
+                          onChange={(e) => setPoemForm({ ...poemForm, title: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                          placeholder="e.g., Forever Yours, My Heart..."
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-sm text-rose-100">Poem Content</label>
+                          <button
+                            type="button"
+                            onClick={() => setShowAiPoemPopup(true)}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-200 text-xs font-medium hover:from-purple-500/30 hover:to-pink-500/30 transition-all"
+                          >
+                            ✨ Generate with AI
+                          </button>
+                        </div>
+                        <textarea
+                          value={poemForm.content}
+                          onChange={(e) => setPoemForm({ ...poemForm, content: e.target.value })}
+                          className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none resize-none font-mono text-sm"
+                          rows={8}
+                          placeholder="Write your poem here...&#10;Each line on a new row&#10;&#10;Leave empty lines for stanza breaks"
+                        />
+                        <p className="text-xs text-rose-100/50 mt-1">
+                          Tip: Each line becomes a verse. Empty lines create stanza breaks.
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={editingPoem ? handleEditPoem : handleAddPoem}
+                          disabled={saving}
+                          className="flex-1 bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all disabled:opacity-50"
+                        >
+                          {saving ? "Saving..." : editingPoem ? "Update" : "Add Poem"}
+                        </button>
+                        <button
+                          onClick={cancelPoemForm}
+                          className="px-4 py-2 rounded-xl font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {poems.length === 0 && !showPoemForm ? (
+                    <div className="text-center py-12 text-rose-100/70">
+                      <p className="text-4xl mb-4">📖</p>
+                      <p>No poems yet. Add your first love poem!</p>
+                      <p className="text-sm mt-2 text-rose-100/50">
+                        These appear in the flip book on your page
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {poems.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="bg-white/5 rounded-xl p-4 border border-white/10 group"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-rose-300 text-xs">📖 Page {index + 1}</span>
+                              </div>
+                              <h4 className="text-white font-medium">{item.title}</h4>
+                              <p className="text-rose-100/60 text-sm mt-1 line-clamp-3 whitespace-pre-wrap">{item.content}</p>
+                            </div>
+                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                              <button
+                                onClick={() => startEditPoem(item)}
+                                className="text-white/70 hover:text-white text-sm"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleDeletePoem(item)}
+                                className="text-red-400 hover:text-red-300 text-sm"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <p className="text-sm text-rose-100/50">
+                    {poems.length} poem{poems.length !== 1 ? "s" : ""} in your book
                   </p>
                 </div>
               )}
@@ -2229,6 +2500,79 @@ export default function DashboardPage() {
                 ) : (
                   <>
                     ✨ Generate Love Letter
+                  </>
+                )}
+              </button>
+              
+              <p className="text-rose-100/50 text-xs text-center">
+                Powered by GPT-4o • You can edit the result after
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Poem Generation Popup */}
+      {showAiPoemPopup && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-rose-900 to-pink-900 rounded-2xl p-6 max-w-md w-full border border-white/20 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                ✨ AI Poem Generator
+              </h3>
+              <button
+                onClick={() => { setShowAiPoemPopup(false); setAiPoemPrompt(""); }}
+                className="text-white/60 hover:text-white text-xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <p className="text-rose-100/80 text-sm mb-4">
+              Describe the theme or feeling, and AI will craft a beautiful poem for you!
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-rose-100 mb-1">What&apos;s the theme?</label>
+                <input
+                  type="text"
+                  value={aiPoemPrompt}
+                  onChange={(e) => setAiPoemPrompt(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-rose-200/50 focus:border-white/40 outline-none"
+                  placeholder="e.g., our first kiss, how beautiful she is, my undying love..."
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-rose-100 mb-1">Style</label>
+                <select
+                  value={aiPoemStyle}
+                  onChange={(e) => setAiPoemStyle(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:border-white/40 outline-none"
+                >
+                  <option value="romantic">💕 Romantic & Elegant</option>
+                  <option value="funny">😂 Funny & Playful</option>
+                  <option value="passionate">🔥 Passionate & Intense</option>
+                  <option value="sweet">🍭 Sweet & Tender</option>
+                  <option value="poetic">📜 Literary & Artistic</option>
+                </select>
+              </div>
+              
+              <button
+                onClick={handleGeneratePoemWithAI}
+                disabled={aiPoemGenerating || !aiPoemPrompt.trim()}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-xl font-medium hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {aiPoemGenerating ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Writing poetry...
+                  </>
+                ) : (
+                  <>
+                    ✨ Generate Poem
                   </>
                 )}
               </button>

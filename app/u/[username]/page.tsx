@@ -9,6 +9,7 @@ import { TimelineItemData } from "@/app/components/Timeline";
 import { ReasonItemData } from "@/app/components/bento/ReasonCard";
 import { BucketListItemData } from "@/app/components/BucketList";
 import { OpenWhenNoteData } from "@/app/components/OpenWhenNotes";
+import { PoemData } from "@/app/components/LoveBook";
 import { MusicSettingsData } from "@/app/components/bento/MusicCard";
 import { CouponItemData } from "@/app/components/LoveCoupons";
 
@@ -23,6 +24,7 @@ interface PageData {
   reasons: ReasonItemData[];
   bucketList: BucketListItemData[];
   openWhenNotes: OpenWhenNoteData[];
+  poems: PoemData[];
   musicSettings: MusicSettingsData;
   coupons: CouponItemData[];
   showBucketList: boolean;
@@ -110,6 +112,13 @@ export default function UserPage() {
         .eq("page_id", page.id)
         .order("order_index", { ascending: true });
 
+      // Get poems
+      const { data: poemsData } = await supabase
+        .from("poems")
+        .select("*")
+        .eq("page_id", page.id)
+        .order("order_index", { ascending: true });
+
       // Transform gallery items
       const galleryItems: GalleryItem[] = (galleryData || []).map((item) => ({
         id: item.id,
@@ -150,6 +159,13 @@ export default function UserPage() {
         iconColor: item.icon_color,
       }));
 
+      // Transform poems
+      const poems: PoemData[] = (poemsData || []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        content: item.content,
+      }));
+
       setPageData({
         startDate: new Date(page.start_date),
         recipientName: page.recipient_name,
@@ -161,6 +177,7 @@ export default function UserPage() {
         reasons,
         bucketList,
         openWhenNotes,
+        poems,
         // These will use defaults if not customized (future feature)
         musicSettings: {},
         coupons: [],
@@ -222,6 +239,7 @@ export default function UserPage() {
       reasons={pageData.reasons}
       bucketList={pageData.bucketList}
       openWhenNotes={pageData.openWhenNotes}
+      poems={pageData.poems}
       musicSettings={pageData.musicSettings}
       coupons={pageData.coupons}
       showBucketList={pageData.showBucketList}

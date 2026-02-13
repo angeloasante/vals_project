@@ -3,121 +3,40 @@
 import { useState } from "react";
 import { useScrollReveal } from "../hooks/useScrollReveal";
 
-const POEMS = [
+export interface PoemData {
+  id?: string;
+  title: string;
+  content: string; // Lines separated by newlines
+}
+
+// Convert content string to lines array
+const contentToLines = (content: string): string[] => {
+  return content.split('\n');
+};
+
+const DEFAULT_POEMS: PoemData[] = [
   {
-    title: "Real Talk 😂",
-    lines: [
-      "Have you seen your ass and boobs girllllllll?!",
-      "I mean... DAMN. 👀",
-      "",
-      "But for real though...",
-      "You're not just fine as hell,",
-      "You got my heart under a spell.",
-      "",
-      "Beauty, brains, and all that sass,",
-      "Baby you're top tier, first class. 🔥",
-      "",
-      "(Turn the page for the romantic stuff 💕)",
-    ],
-  },
-  {
-    title: "I'm Sorry 💔",
-    lines: [
-      "I'm the boy who disappears,",
-      "Who's caused you pain and tears.",
-      "I say sorry every time,",
-      "Then repeat the same old crime.",
-      "",
-      "I know I mess up, fade away,",
-      "Promise to change another day.",
-      "My actions don't match my words,",
-      "I know that sounds absurd.",
-      "",
-      "But through it all, this much is true,",
-      "I'll never stop loving you.",
-      "You deserve the world and more,",
-      "You're the one I'm fighting for. 💕",
-    ],
-  },
-  {
-    title: "Only You",
-    lines: [
-      "There's no one else who compares,",
-      "To the way you show you care.",
-      "Your beauty takes my breath away,",
-      "I fall deeper every single day.",
-      "",
-      "You're my sunrise, you're my moon,",
-      "My favorite song, my sweetest tune.",
-      "Forever yours, forever true,",
-      "My heart belongs only to you. 💝",
-    ],
-  },
-  {
-    title: "Beautiful You",
-    lines: [
-      "The way you walk, the way you move,",
-      "Everything about you I approve.",
-      "Your curves, your grace, your gentle touch,",
-      "I can never get enough.",
-      "",
-      "You drive me crazy, make me weak,",
-      "You're the treasure that I seek.",
-      "So perfect in every single way,",
-      "I thank God for you every day. 🌹",
-    ],
-  },
-  {
-    title: "My Queen",
-    lines: [
-      "You're the baddest, that's no lie,",
-      "The most beautiful beneath the sky.",
-      "Your body's art, your soul's divine,",
-      "I'm so blessed that you are mine.",
-      "",
-      "You make me feel so alive,",
-      "With you by my side I thrive.",
-      "My queen, my love, my everything,",
-      "To you my heart I'll always bring. 👑",
-    ],
-  },
-  {
-    title: "Obsessed",
-    lines: [
-      "I'm obsessed with all you are,",
-      "My guiding light, my brightest star.",
-      "The way you taste, the way you feel,",
-      "This love we have is so real.",
-      "",
-      "I want you close both day and night,",
-      "Holding you just feels so right.",
-      "You're my addiction, my desire,",
-      "You set my whole soul on fire. 🔥",
-    ],
+    title: "My Love",
+    content: "You are the light of my life,\nThe reason I smile each day.\nIn your eyes I find my home,\nIn your arms I want to stay.\n\nEvery moment spent with you,\nIs a treasure I hold dear.\nYou make everything beautiful,\nJust by being here. 💕",
   },
   {
     title: "Forever Yours",
-    lines: [
-      "From now until the end of time,",
-      "I promise you that you'll be mine.",
-      "Through every storm and sunny day,",
-      "By your side I'll always stay.",
-      "",
-      "You're my beginning and my end,",
-      "My lover and my best friend.",
-      "So take my hand and hold it tight,",
-      "I'll love you with all my might. 💍",
-    ],
+    content: "From now until the end of time,\nI promise you that you'll be mine.\nThrough every storm and sunny day,\nBy your side I'll always stay.\n\nYou're my beginning and my end,\nMy lover and my best friend.\nSo take my hand and hold it tight,\nI'll love you with all my might. 💍",
   },
 ];
 
-export default function LoveBook() {
+interface LoveBookProps {
+  poems?: PoemData[];
+}
+
+export default function LoveBook({ poems }: LoveBookProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
   const [flipDirection, setFlipDirection] = useState<"left" | "right" | null>(null);
   const headerRef = useScrollReveal();
 
-  const totalPages = POEMS.length;
+  const poemList = poems && poems.length > 0 ? poems : DEFAULT_POEMS;
+  const totalPages = poemList.length;
 
   const goToNextPage = () => {
     if (isFlipping || currentPage >= totalPages - 1) return;
@@ -141,8 +60,8 @@ export default function LoveBook() {
     }, 600);
   };
 
-  const leftPoem = currentPage > 0 ? POEMS[currentPage - 1] : null;
-  const rightPoem = POEMS[currentPage];
+  const leftPoem = currentPage > 0 ? poemList[currentPage - 1] : null;
+  const rightPoem = poemList[currentPage];
 
   return (
     <div className="mb-32">
@@ -190,7 +109,7 @@ export default function LoveBook() {
                       {leftPoem.title}
                     </h3>
                     <div className="flex-1 flex flex-col justify-center">
-                      {leftPoem.lines.map((line, idx) => (
+                      {contentToLines(leftPoem.content).map((line, idx) => (
                         <p
                           key={idx}
                           className={`font-playfair italic text-amber-800/90 text-sm md:text-base leading-relaxed text-center ${
@@ -241,7 +160,7 @@ export default function LoveBook() {
                   {rightPoem.title}
                 </h3>
                 <div className="flex-1 flex flex-col justify-center">
-                  {rightPoem.lines.map((line, idx) => (
+                  {contentToLines(rightPoem.content).map((line, idx) => (
                     <p
                       key={idx}
                       className={`font-playfair italic text-amber-800/90 text-sm md:text-base leading-relaxed text-center ${
@@ -288,7 +207,7 @@ export default function LoveBook() {
 
           {/* Page indicators */}
           <div className="flex justify-center gap-2 mt-6">
-            {POEMS.map((_, idx) => (
+            {poemList.map((_, idx) => (
               <button
                 key={idx}
                 aria-label={`Go to poem ${idx + 1}`}

@@ -11,7 +11,7 @@ import OpenWhenNotes, { OpenWhenNoteData } from "./OpenWhenNotes";
 import BucketList, { BucketListItemData } from "./BucketList";
 import LoveCoupons, { CouponItemData } from "./LoveCoupons";
 import Gallery, { GalleryItem } from "./Gallery";
-import LoveBook from "./LoveBook";
+import LoveBook, { PoemData } from "./LoveBook";
 import CelebrationModal from "./modals/CelebrationModal";
 import NoteModal from "./modals/NoteModal";
 import RejectionModal from "./modals/RejectionModal";
@@ -32,6 +32,7 @@ interface ValentinePageProps {
   reasons?: ReasonItemData[];
   bucketList?: BucketListItemData[];
   openWhenNotes?: OpenWhenNoteData[];
+  poems?: PoemData[];
   musicSettings?: MusicSettingsData;
   coupons?: CouponItemData[];
   showBucketList?: boolean;
@@ -50,6 +51,7 @@ export default function ValentinePage({
   reasons,
   bucketList,
   openWhenNotes,
+  poems,
   musicSettings,
   coupons,
   showBucketList = true,
@@ -98,7 +100,7 @@ export default function ValentinePage({
 
       <main className="w-full max-w-4xl px-6 pb-32 mt-8 md:mt-16 z-10 relative">
         <Hero heroTitle={heroTitle} heroSubtitle={heroSubtitle} recipientName={recipientName} />
-        <LoveBook />
+        <LoveBook poems={poems} />
         <BentoGrid
           startDate={startDate}
           onAcceptValentine={handleAcceptValentine}
