@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Profile {
   id: string;
@@ -22,6 +23,13 @@ interface ValentinePage {
   is_published: boolean;
 }
 
+interface GalleryItem {
+  id: string;
+  src: string;
+  caption: string;
+  order_index: number;
+}
+
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("settings");
@@ -32,6 +40,9 @@ export default function DashboardPage() {
   
   const [profile, setProfile] = useState<Profile | null>(null);
   const [page, setPage] = useState<ValentinePage | null>(null);
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form states
   const [recipientName, setRecipientName] = useState("My Love");
@@ -93,6 +104,17 @@ export default function DashboardPage() {
       setHeroTitle(pageData.hero_title || "To My Everything");
       setHeroSubtitle(pageData.hero_subtitle || "A little corner of the internet, just for you 💕");
       setIsPublished(pageData.is_published || false);
+
+      // Load gallery items
+      const { data: galleryData } = await supabase
+        .from("gallery_items")
+        .select("*")
+        .eq("page_id", pageData.id)
+        .order("order_index", { ascending: true });
+
+      if (galleryData) {
+        setGalleryItems(galleryData);
+      }
     }
 
     setLoading(false);
@@ -146,6 +168,117 @@ export default function DashboardPage() {
     await supabase.auth.signOut();
     router.push("/");
     router.refresh();
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !page?.id || !profile?.id) return;
+
+    setUploadingPhoto(true);
+    setMessage(null);
+
+    try {
+      for (const file of Array.from(files)) {
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+          setMessage({ type: "error", text: "Only image files are allowed" });
+          continue;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          setMessage({ type: "error", text: "Image must be less than 5MB" });
+          continue;
+        }
+
+        // Generate unique filename
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${profile.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        // Upload to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from("user-uploads")
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          setMessage({ type: "error", text: "Failed to upload image" });
+          continue;
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from("user-uploads")
+          .getPublicUrl(fileName);
+
+        // Save to gallery_items table
+        const { data: newItem, error: dbError } = await supabase
+          .from("gallery_items")
+          .insert({
+            page_id: page.id,
+            src: urlData.publicUrl,
+            caption: "",
+            order_index: galleryItems.length,
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error("DB error:", dbError);
+          setMessage({ type: "error", text: "Failed to save image" });
+          continue;
+        }
+
+        if (newItem) {
+          setGalleryItems((prev) => [...prev, newItem]);
+        }
+      }
+
+      setMessage({ type: "success", text: "Photo(s) uploaded!" });
+    } catch (error) {
+      console.error("Upload error:", error);
+      setMessage({ type: "error", text: "Something went wrong" });
+    }
+
+    setUploadingPhoto(false);
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDeletePhoto = async (item: GalleryItem) => {
+    if (!confirm("Delete this photo?")) return;
+
+    try {
+      // Extract file path from URL
+      const url = new URL(item.src);
+      const pathParts = url.pathname.split("/user-uploads/");
+      const filePath = pathParts[1];
+
+      // Delete from storage
+      if (filePath) {
+        await supabase.storage.from("user-uploads").remove([filePath]);
+      }
+
+      // Delete from database
+      const { error } = await supabase
+        .from("gallery_items")
+        .delete()
+        .eq("id", item.id);
+
+      if (error) {
+        setMessage({ type: "error", text: "Failed to delete photo" });
+        return;
+      }
+
+      // Update local state
+      setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
+      setMessage({ type: "success", text: "Photo deleted" });
+    } catch (error) {
+      console.error("Delete error:", error);
+      setMessage({ type: "error", text: "Failed to delete photo" });
+    }
   };
 
   const pageUrl = `https://vals.love/u/${profile?.username}`;
@@ -376,17 +509,63 @@ export default function DashboardPage() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-white">Photo Gallery</h2>
-                    <button className="bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all">
-                      + Add Photo
-                    </button>
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                        id="photo-upload"
+                      />
+                      <label
+                        htmlFor="photo-upload"
+                        className={`bg-white text-rose-600 px-4 py-2 rounded-xl font-medium hover:bg-rose-50 transition-all cursor-pointer inline-block ${
+                          uploadingPhoto ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        {uploadingPhoto ? "Uploading..." : "+ Add Photo"}
+                      </label>
+                    </div>
                   </div>
                   
-                  <div className="text-center py-12 text-rose-100/70">
-                    <p className="text-4xl mb-4">📸</p>
-                    <p>No photos yet. Add your first memory!</p>
-                  </div>
+                  {galleryItems.length === 0 ? (
+                    <div className="text-center py-12 text-rose-100/70">
+                      <p className="text-4xl mb-4">📸</p>
+                      <p>No photos yet. Add your first memory!</p>
+                      <p className="text-sm mt-2 text-rose-100/50">
+                        Upload up to 5MB per image
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {galleryItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="relative group aspect-square rounded-xl overflow-hidden bg-white/10"
+                        >
+                          <Image
+                            src={item.src}
+                            alt={item.caption || "Gallery photo"}
+                            fill
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button
+                              onClick={() => handleDeletePhoto(item)}
+                              className="bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <p className="text-sm text-rose-100/50">
-                    Coming soon: Upload photos directly from here!
+                    {galleryItems.length} photo{galleryItems.length !== 1 ? "s" : ""} uploaded
                   </p>
                 </div>
               )}
@@ -512,10 +691,25 @@ export default function DashboardPage() {
                       
                       {/* Bento Grid Preview */}
                       <div className="grid grid-cols-2 gap-2 mb-4">
-                        {/* Gallery Card */}
-                        <div className="bg-white/90 backdrop-blur rounded-xl p-3 text-left">
-                          <p className="text-[10px] text-rose-600 font-medium mb-1">📸 Gallery</p>
-                          <p className="text-[8px] text-gray-600">Our memories</p>
+                        {/* Gallery Card - Show actual photos */}
+                        <div className="bg-white/90 backdrop-blur rounded-xl p-2 text-left col-span-2">
+                          <p className="text-[10px] text-rose-600 font-medium mb-2">📸 Gallery ({galleryItems.length})</p>
+                          {galleryItems.length > 0 ? (
+                            <div className="grid grid-cols-3 gap-1">
+                              {galleryItems.slice(0, 6).map((item) => (
+                                <div key={item.id} className="aspect-square relative rounded overflow-hidden">
+                                  <Image
+                                    src={item.src}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[8px] text-gray-600">No photos yet</p>
+                          )}
                         </div>
                         
                         {/* Music Card */}
@@ -525,9 +719,9 @@ export default function DashboardPage() {
                         </div>
                         
                         {/* Reasons Card */}
-                        <div className="bg-white/90 backdrop-blur rounded-xl p-3 text-left col-span-2">
-                          <p className="text-[10px] text-rose-600 font-medium mb-1">💕 Why I Love You</p>
-                          <p className="text-[8px] text-gray-600">100+ reasons and counting</p>
+                        <div className="bg-white/90 backdrop-blur rounded-xl p-3 text-left">
+                          <p className="text-[10px] text-rose-600 font-medium mb-1">💕 Reasons</p>
+                          <p className="text-[8px] text-gray-600">Why I love you</p>
                         </div>
                         
                         {/* Valentine Card */}
@@ -630,17 +824,31 @@ export default function DashboardPage() {
                       
                       {/* Desktop Bento Grid */}
                       <div className="grid grid-cols-3 gap-2 max-w-[350px] mx-auto">
-                        <div className="bg-white/90 rounded-lg p-2">
-                          <p className="text-[8px] text-rose-600 font-medium">📸 Gallery</p>
+                        {/* Gallery with photos */}
+                        <div className="bg-white/90 rounded-lg p-2 col-span-3">
+                          <p className="text-[8px] text-rose-600 font-medium mb-1">📸 Gallery ({galleryItems.length})</p>
+                          {galleryItems.length > 0 ? (
+                            <div className="grid grid-cols-4 gap-1">
+                              {galleryItems.slice(0, 4).map((item) => (
+                                <div key={item.id} className="aspect-square relative rounded overflow-hidden">
+                                  <Image
+                                    src={item.src}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-[7px] text-gray-500">No photos uploaded</p>
+                          )}
                         </div>
                         <div className="bg-white/90 rounded-lg p-2">
                           <p className="text-[8px] text-rose-600 font-medium">🎵 Music</p>
                         </div>
                         <div className="bg-white/90 rounded-lg p-2">
                           <p className="text-[8px] text-rose-600 font-medium">💕 Reasons</p>
-                        </div>
-                        <div className="bg-white/90 rounded-lg p-2 col-span-2">
-                          <p className="text-[8px] text-rose-600 font-medium">📅 Timeline</p>
                         </div>
                         <div className="bg-white/90 rounded-lg p-2">
                           <p className="text-[8px] text-rose-600 font-medium">💌 Poems</p>
