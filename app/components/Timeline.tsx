@@ -60,6 +60,7 @@ function TimelineItem({
                 className="rounded-xl object-cover"
                 sizes="192px"
                 quality={75}
+                unoptimized
               />
             </div>
           </GlassCard>
@@ -105,6 +106,7 @@ function TimelineItem({
                 className="rounded-xl object-cover"
                 sizes="192px"
                 quality={75}
+                unoptimized
               />
             </div>
           </GlassCard>

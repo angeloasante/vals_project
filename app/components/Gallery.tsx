@@ -213,6 +213,7 @@ export default function Gallery({ items }: GalleryProps) {
                 className="object-cover" 
                 sizes="350px"
                 quality={60}
+                unoptimized
               />
             )}
           </div>
@@ -229,6 +230,7 @@ export default function Gallery({ items }: GalleryProps) {
                 className="object-cover" 
                 sizes="350px"
                 quality={60}
+                unoptimized
               />
             )}
           </div>
@@ -287,6 +289,7 @@ export default function Gallery({ items }: GalleryProps) {
                 sizes="300px"
                 priority={currentIndex === 0}
                 quality={75}
+                unoptimized
               />
             )}
 
@@ -408,6 +411,7 @@ export default function Gallery({ items }: GalleryProps) {
                   className="object-cover" 
                   sizes="80px"
                   quality={50}
+                  unoptimized
                 />
               )}
             </button>

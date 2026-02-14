@@ -10,8 +10,17 @@ const nextConfig: NextConfig = {
         hostname: "zjzpcuwlwzvbwqlhbbss.supabase.co",
         pathname: "/storage/v1/object/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  // Allow external images that might resolve to private IPs (common with CDNs)
+  serverExternalPackages: [],
   experimental: {
     optimizePackageImports: ["@iconify/react"],
   },

@@ -1577,7 +1577,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-4">
                         {musicSettings.album_cover && (
                           <div className="relative w-16 h-16 rounded-lg overflow-hidden">
-                            <Image src={musicSettings.album_cover} alt="Album cover" fill className="object-cover" />
+                            <Image src={musicSettings.album_cover} alt="Album cover" fill className="object-cover" unoptimized />
                           </div>
                         )}
                         <div className="flex-1">
@@ -1726,7 +1726,7 @@ export default function DashboardPage() {
                       <div className="flex gap-4">
                         {musicSettings.album_cover && (
                           <div className="relative w-20 h-20 rounded-lg overflow-hidden">
-                            <Image src={musicSettings.album_cover} alt="Cover" fill className="object-cover" />
+                            <Image src={musicSettings.album_cover} alt="Cover" fill className="object-cover" unoptimized />
                             <button
                               onClick={() => setMusicSettings({ ...musicSettings, album_cover: "" })}
                               className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
@@ -1847,6 +1847,7 @@ export default function DashboardPage() {
                               alt={item.caption || "Gallery photo"}
                               fill
                               className="object-cover"
+                              unoptimized
                             />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                               <button
@@ -1983,6 +1984,7 @@ export default function DashboardPage() {
                                 alt="Timeline photo"
                                 fill
                                 className="object-cover"
+                                unoptimized
                               />
                               <button
                                 onClick={() => setTimelineForm({ ...timelineForm, imageSrc: "" })}
@@ -2052,6 +2054,7 @@ export default function DashboardPage() {
                                   alt=""
                                   fill
                                   className="object-cover"
+                                  unoptimized
                                 />
                               </div>
                             )}
@@ -2928,7 +2931,7 @@ export default function DashboardPage() {
                       <div className="grid grid-cols-4 gap-2 mb-2">
                         {virusImages.map((img, index) => (
                           <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
-                            <Image src={img} alt="" fill className="object-cover" />
+                            <Image src={img} alt="" fill className="object-cover" unoptimized />
                             <button
                               onClick={() => setVirusImages(virusImages.filter((_, i) => i !== index))}
                               className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
@@ -3212,7 +3215,7 @@ export default function DashboardPage() {
                                 </div>
                                 {item.image_src && (
                                   <div className="w-12 h-12 rounded-lg overflow-hidden">
-                                    <Image src={item.image_src} alt="" width={48} height={48} className="object-cover w-full h-full" />
+                                    <Image src={item.image_src} alt="" width={48} height={48} className="object-cover w-full h-full" unoptimized />
                                   </div>
                                 )}
                               </div>
@@ -3257,7 +3260,7 @@ export default function DashboardPage() {
                           <p className="text-white font-medium text-center mb-1">Our Moments</p>
                           <p className="text-rose-200/70 text-[8px] text-center mb-2">SWIPE THROUGH OUR MEMORIES</p>
                           <div className="aspect-square relative rounded-xl overflow-hidden max-w-[180px] mx-auto">
-                            <Image src={galleryItems[0]?.src || ""} alt="" fill className="object-cover" />
+                            <Image src={galleryItems[0]?.src || ""} alt="" fill className="object-cover" unoptimized />
                           </div>
                           <div className="flex justify-center gap-1 mt-2">
                             <div className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center text-white text-[8px]">←</div>
@@ -3388,7 +3391,7 @@ export default function DashboardPage() {
                             </div>
                             {timelineItems[0]?.image_src && (
                               <div className="w-10 h-10 rounded overflow-hidden">
-                                <Image src={timelineItems[0].image_src} alt="" width={40} height={40} className="object-cover" />
+                                <Image src={timelineItems[0].image_src} alt="" width={40} height={40} className="object-cover" unoptimized />
                               </div>
                             )}
                           </div>
@@ -3417,7 +3420,7 @@ export default function DashboardPage() {
                           <div className="grid grid-cols-3 gap-1">
                             {galleryItems.slice(0, 3).map((item) => (
                               <div key={item.id} className="aspect-square relative rounded overflow-hidden">
-                                <Image src={item.src} alt="" fill className="object-cover" />
+                                <Image src={item.src} alt="" fill className="object-cover" unoptimized />
                               </div>
                             ))}
                           </div>
