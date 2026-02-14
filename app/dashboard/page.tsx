@@ -645,7 +645,7 @@ export default function DashboardPage() {
 
         // Upload to Supabase Storage
         const { error: uploadError } = await supabase.storage
-          .from("user-uploads")
+          .from("gallery")
           .upload(fileName, file);
 
         if (uploadError) {
@@ -656,7 +656,7 @@ export default function DashboardPage() {
 
         // Get public URL
         const { data: urlData } = supabase.storage
-          .from("user-uploads")
+          .from("gallery")
           .getPublicUrl(fileName);
 
         // Save to gallery_items table
@@ -701,12 +701,12 @@ export default function DashboardPage() {
     try {
       // Extract file path from URL
       const url = new URL(item.src);
-      const pathParts = url.pathname.split("/user-uploads/");
+      const pathParts = url.pathname.split("/gallery/");
       const filePath = pathParts[1];
 
       // Delete from storage
       if (filePath) {
-        await supabase.storage.from("user-uploads").remove([filePath]);
+        await supabase.storage.from("gallery").remove([filePath]);
       }
 
       // Delete from database
@@ -751,7 +751,7 @@ export default function DashboardPage() {
       const fileName = `${profile.id}/timeline-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("user-uploads")
+        .from("gallery")
         .upload(fileName, file);
 
       if (uploadError) {
@@ -761,7 +761,7 @@ export default function DashboardPage() {
       }
 
       const { data: urlData } = supabase.storage
-        .from("user-uploads")
+        .from("gallery")
         .getPublicUrl(fileName);
 
       setTimelineForm({ ...timelineForm, imageSrc: urlData.publicUrl });
