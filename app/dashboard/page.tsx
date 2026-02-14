@@ -54,6 +54,7 @@ interface ValentinePage {
 interface GalleryItem {
   id: string;
   src: string;
+  type?: string;
   caption: string;
   order_index: number;
 }
@@ -64,6 +65,7 @@ interface TimelineItem {
   title: string;
   description: string;
   image_src: string | null;
+  media_type?: string;
   order_index: number;
 }
 
@@ -180,7 +182,7 @@ export default function DashboardPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showTimelineForm, setShowTimelineForm] = useState(false);
   const [editingTimeline, setEditingTimeline] = useState<TimelineItem | null>(null);
-  const [timelineForm, setTimelineForm] = useState({ label: "", title: "", description: "", imageSrc: "" });
+  const [timelineForm, setTimelineForm] = useState({ label: "", title: "", description: "", imageSrc: "", mediaType: "" });
   const [uploadingTimelineImage, setUploadingTimelineImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timelineImageInputRef = useRef<HTMLInputElement>(null);
@@ -627,15 +629,18 @@ export default function DashboardPage() {
 
     try {
       for (const file of Array.from(files)) {
-        // Validate file type
-        if (!file.type.startsWith("image/")) {
-          toast.error("Only image files are allowed");
+        // Validate file type (allow images and videos)
+        const isImage = file.type.startsWith("image/");
+        const isVideo = file.type.startsWith("video/");
+        if (!isImage && !isVideo) {
+          toast.error("Only image and video files are allowed");
           continue;
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error("Image must be less than 5MB");
+        // Validate file size (max 5MB for images, 50MB for videos)
+        const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+          toast.error(isVideo ? "Video must be less than 50MB" : "Image must be less than 5MB");
           continue;
         }
 
@@ -660,11 +665,13 @@ export default function DashboardPage() {
           .getPublicUrl(fileName);
 
         // Save to gallery_items table
+        const mediaType = file.type.startsWith("video/") ? "video" : "image";
         const { data: newItem, error: dbError } = await supabase
           .from("gallery_items")
           .insert({
             page_id: page.id,
             src: urlData.publicUrl,
+            type: mediaType,
             caption: "",
             order_index: galleryItems.length,
           })
@@ -682,7 +689,7 @@ export default function DashboardPage() {
         }
       }
 
-      toast.success("Photo(s) uploaded!");
+      toast.success("Media uploaded!");
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Something went wrong");
@@ -734,13 +741,16 @@ export default function DashboardPage() {
     const file = e.target.files?.[0];
     if (!file || !profile?.id) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Only image files are allowed");
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    if (!isImage && !isVideo) {
+      toast.error("Only image and video files are allowed");
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be less than 5MB");
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error(isVideo ? "Video must be less than 50MB" : "Image must be less than 5MB");
       return;
     }
 
@@ -764,7 +774,8 @@ export default function DashboardPage() {
         .from("gallery")
         .getPublicUrl(fileName);
 
-      setTimelineForm({ ...timelineForm, imageSrc: urlData.publicUrl });
+      const mediaType = file.type.startsWith("video/") ? "video" : "image";
+      setTimelineForm({ ...timelineForm, imageSrc: urlData.publicUrl, mediaType });
     } catch {
       toast.error("Upload failed");
     }
@@ -791,6 +802,7 @@ export default function DashboardPage() {
         title: timelineForm.title,
         description: timelineForm.description,
         image_src: timelineForm.imageSrc || null,
+        media_type: timelineForm.mediaType || null,
         order_index: timelineItems.length,
       })
       .select()
@@ -800,7 +812,7 @@ export default function DashboardPage() {
       toast.error("Failed to add timeline item");
     } else if (newItem) {
       setTimelineItems((prev) => [...prev, newItem]);
-      setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
+      setTimelineForm({ label: "", title: "", description: "", imageSrc: "", mediaType: "" });
       setShowTimelineForm(false);
       toast.success("Memory added!");
     }
@@ -820,6 +832,7 @@ export default function DashboardPage() {
         title: timelineForm.title,
         description: timelineForm.description,
         image_src: timelineForm.imageSrc || null,
+        media_type: timelineForm.mediaType || null,
       })
       .eq("id", editingTimeline.id);
 
@@ -829,12 +842,12 @@ export default function DashboardPage() {
       setTimelineItems((prev) =>
         prev.map((item) =>
           item.id === editingTimeline.id
-            ? { ...item, label: timelineForm.label, title: timelineForm.title, description: timelineForm.description, image_src: timelineForm.imageSrc || null }
+            ? { ...item, label: timelineForm.label, title: timelineForm.title, description: timelineForm.description, image_src: timelineForm.imageSrc || null, media_type: timelineForm.mediaType || undefined }
             : item
         )
       );
       setEditingTimeline(null);
-      setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
+      setTimelineForm({ label: "", title: "", description: "", imageSrc: "", mediaType: "" });
       toast.success("Memory updated!");
     }
     
@@ -859,14 +872,14 @@ export default function DashboardPage() {
 
   const startEditTimeline = (item: TimelineItem) => {
     setEditingTimeline(item);
-    setTimelineForm({ label: item.label, title: item.title, description: item.description, imageSrc: item.image_src || "" });
+    setTimelineForm({ label: item.label, title: item.title, description: item.description, imageSrc: item.image_src || "", mediaType: item.media_type || "" });
     setShowTimelineForm(true);
   };
 
   const cancelTimelineForm = () => {
     setShowTimelineForm(false);
     setEditingTimeline(null);
-    setTimelineForm({ label: "", title: "", description: "", imageSrc: "" });
+    setTimelineForm({ label: "", title: "", description: "", imageSrc: "", mediaType: "" });
   };
 
   // Reasons handlers
@@ -1802,7 +1815,7 @@ export default function DashboardPage() {
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept="image/*"
+                          accept="image/*,video/*"
                           multiple
                           onChange={handlePhotoUpload}
                           className="hidden"
@@ -1829,9 +1842,9 @@ export default function DashboardPage() {
                   {galleryItems.length === 0 ? (
                     <div className="text-center py-12 text-rose-100/70">
                       <p className="text-4xl mb-4">📸</p>
-                      <p>No photos yet. Add your first memory!</p>
+                      <p>No photos or videos yet. Add your first memory!</p>
                       <p className="text-sm mt-2 text-rose-100/50">
-                        Upload up to 5MB per image
+                        Images up to 5MB, videos up to 50MB
                       </p>
                     </div>
                   ) : (
@@ -1842,13 +1855,30 @@ export default function DashboardPage() {
                           className="relative group rounded-xl overflow-hidden bg-white/10"
                         >
                           <div className="aspect-square relative">
-                            <Image
-                              src={item.src}
-                              alt={item.caption || "Gallery photo"}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
+                            {item.type === "video" ? (
+                              <video
+                                src={item.src}
+                                className="w-full h-full object-cover"
+                                muted
+                                loop
+                                playsInline
+                                onMouseEnter={(e) => e.currentTarget.play()}
+                                onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                              />
+                            ) : (
+                              <Image
+                                src={item.src}
+                                alt={item.caption || "Gallery photo"}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            )}
+                            {item.type === "video" && (
+                              <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded-full text-white text-xs flex items-center gap-1">
+                                🎬 Video
+                              </div>
+                            )}
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                               <button
                                 onClick={() => startEditCaption(item)}
@@ -1975,19 +2005,35 @@ export default function DashboardPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm text-rose-100 mb-1">Photo (optional)</label>
+                        <label className="block text-sm text-rose-100 mb-1">Photo/Video (optional)</label>
                         <div className="flex items-center gap-3">
                           {timelineForm.imageSrc ? (
                             <div className="relative w-20 h-20 rounded-lg overflow-hidden">
-                              <Image
-                                src={timelineForm.imageSrc}
-                                alt="Timeline photo"
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
+                              {timelineForm.mediaType === "video" ? (
+                                <video
+                                  src={timelineForm.imageSrc}
+                                  className="w-full h-full object-cover"
+                                  muted
+                                  loop
+                                  autoPlay
+                                  playsInline
+                                />
+                              ) : (
+                                <Image
+                                  src={timelineForm.imageSrc}
+                                  alt="Timeline photo"
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              )}
+                              {timelineForm.mediaType === "video" && (
+                                <div className="absolute top-1 left-1 px-1 py-0.5 bg-black/60 rounded text-white text-[8px]">
+                                  🎬
+                                </div>
+                              )}
                               <button
-                                onClick={() => setTimelineForm({ ...timelineForm, imageSrc: "" })}
+                                onClick={() => setTimelineForm({ ...timelineForm, imageSrc: "", mediaType: "" })}
                                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
                               >
                                 ×
@@ -1998,7 +2044,7 @@ export default function DashboardPage() {
                               <input
                                 ref={timelineImageInputRef}
                                 type="file"
-                                accept="image/*"
+                                accept="image/*,video/*"
                                 onChange={handleTimelineImageUpload}
                                 className="hidden"
                                 id="timeline-image-upload"
@@ -2009,7 +2055,7 @@ export default function DashboardPage() {
                                   uploadingTimelineImage ? "opacity-50 cursor-not-allowed" : ""
                                 }`}
                               >
-                                {uploadingTimelineImage ? "Uploading..." : "📷 Add Photo"}
+                                {uploadingTimelineImage ? "Uploading..." : "📷 Add Media"}
                               </label>
                             </>
                           )}
@@ -2049,13 +2095,30 @@ export default function DashboardPage() {
                           <div className="flex items-start gap-3">
                             {item.image_src && (
                               <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                                <Image
-                                  src={item.image_src}
-                                  alt=""
-                                  fill
-                                  className="object-cover"
-                                  unoptimized
-                                />
+                                {item.media_type === "video" ? (
+                                  <video
+                                    src={item.image_src}
+                                    className="w-full h-full object-cover"
+                                    muted
+                                    loop
+                                    playsInline
+                                    onMouseEnter={(e) => e.currentTarget.play()}
+                                    onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                                  />
+                                ) : (
+                                  <Image
+                                    src={item.image_src}
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                  />
+                                )}
+                                {item.media_type === "video" && (
+                                  <div className="absolute top-0.5 left-0.5 px-1 py-0.5 bg-black/60 rounded text-white text-[8px]">
+                                    🎬
+                                  </div>
+                                )}
                               </div>
                             )}
                             <div className="flex-1 min-w-0">

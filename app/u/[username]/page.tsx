@@ -148,6 +148,7 @@ export default function UserPage() {
         title: item.title,
         description: item.description || "",
         imageSrc: item.image_src,
+        mediaType: item.media_type,
       }));
 
       // Transform reasons

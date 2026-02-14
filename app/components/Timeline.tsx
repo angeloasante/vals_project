@@ -11,6 +11,7 @@ export interface TimelineItemData {
   title: string;
   description: string;
   imageSrc?: string;
+  mediaType?: string;
 }
 
 interface TimelineItemProps {
@@ -19,6 +20,7 @@ interface TimelineItemProps {
   description: string;
   imageSrc: string;
   imageAlt: string;
+  mediaType?: string;
   icon: string;
   iconBgColor: string;
   iconTextColor?: string;
@@ -32,6 +34,7 @@ function TimelineItem({
   description,
   imageSrc,
   imageAlt,
+  mediaType,
   icon,
   iconBgColor,
   iconTextColor = "text-white",
@@ -53,15 +56,31 @@ function TimelineItem({
             className={`p-2 rounded-2xl ${imageRotation} hover:rotate-0 transition-transform duration-500 w-fit ml-auto`}
           >
             <div className="relative w-48 h-32">
-              <Image
-                src={imageSrc}
-                alt={imageAlt}
-                fill
-                className="rounded-xl object-cover"
-                sizes="192px"
-                quality={75}
-                unoptimized
-              />
+              {mediaType === "video" ? (
+                <video
+                  src={imageSrc}
+                  className="w-full h-full object-cover rounded-xl"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                />
+              ) : (
+                <Image
+                  src={imageSrc}
+                  alt={imageAlt}
+                  fill
+                  className="rounded-xl object-cover"
+                  sizes="192px"
+                  quality={75}
+                  unoptimized
+                />
+              )}
+              {mediaType === "video" && (
+                <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm rounded text-white text-xs">
+                  🎬
+                </div>
+              )}
             </div>
           </GlassCard>
         ) : (
@@ -99,15 +118,31 @@ function TimelineItem({
             className={`p-2 rounded-2xl ${imageRotation} hover:rotate-0 transition-transform duration-500 w-fit mx-auto md:mx-0`}
           >
             <div className="relative w-48 h-32">
-              <Image
-                src={imageSrc}
-                alt={imageAlt}
-                fill
-                className="rounded-xl object-cover"
-                sizes="192px"
-                quality={75}
-                unoptimized
-              />
+              {mediaType === "video" ? (
+                <video
+                  src={imageSrc}
+                  className="w-full h-full object-cover rounded-xl"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                />
+              ) : (
+                <Image
+                  src={imageSrc}
+                  alt={imageAlt}
+                  fill
+                  className="rounded-xl object-cover"
+                  sizes="192px"
+                  quality={75}
+                  unoptimized
+                />
+              )}
+              {mediaType === "video" && (
+                <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-sm rounded text-white text-xs">
+                  🎬
+                </div>
+              )}
             </div>
           </GlassCard>
         )}
@@ -204,6 +239,7 @@ export default function Timeline({ items }: TimelineProps) {
               description={memory.description}
               imageSrc={memory.imageSrc || "/first-hello.jpeg"}
               imageAlt={memory.title}
+              mediaType={memory.mediaType}
               icon={style.icon}
               iconBgColor={style.iconBgColor}
               iconTextColor={style.iconTextColor}
